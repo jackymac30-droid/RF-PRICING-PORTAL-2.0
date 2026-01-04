@@ -32,6 +32,23 @@ else
     echo "📤 Pushing to GitHub..."
     git push
     
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "⚠️  First time? You'll need to authenticate ONCE:"
+        echo ""
+        echo "   1. Get a token: https://github.com/settings/tokens"
+        echo "   2. Click 'Generate new token (classic)'"
+        echo "   3. Check 'repo' permission"
+        echo "   4. Copy the token"
+        echo "   5. Run this command:"
+        echo ""
+        echo "      git push https://YOUR_TOKEN@github.com/jackymac30-droid/RF-PRICING-PORTAL-2.0.git main"
+        echo ""
+        echo "   After this ONE time, it will work automatically forever!"
+        echo ""
+        exit 1
+    fi
+    
     if [ $? -eq 0 ]; then
         echo ""
         echo "✅ Successfully pushed to GitHub!"
