@@ -3,6 +3,7 @@ import { useApp } from '../contexts/AppContext';
 import { LogIn, Shield, Users, TrendingUp, Zap, Sparkles, ArrowRight, CheckCircle2, Eye, EyeOff, Lock, Key, Brain, BarChart3, Target, Activity, Award, DollarSign, Package, Clock, Globe } from 'lucide-react';
 import { fetchSuppliers } from '../utils/database';
 import { supabase } from '../utils/supabase';
+import { seedDatabase } from '../utils/seedDatabase';
 import type { Supplier } from '../types';
 
 export function Login() {
@@ -16,6 +17,8 @@ export function Login() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [accessGranted, setAccessGranted] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMessage, setSeedMessage] = useState('');
   
   // Check if running in development mode (localhost or dev environment OR if VITE_DEV_MODE is explicitly true)
   const isDevMode = (import.meta.env.DEV || 
@@ -602,6 +605,55 @@ export function Login() {
                     )}
                   </button>
                 </form>
+
+                {/* Seed Database Button (Dev Mode) */}
+                {isDevMode && (
+                  <div className="mt-6 pt-6 border-t border-white/10">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setSeeding(true);
+                        setSeedMessage('');
+                        try {
+                          const result = await seedDatabase();
+                          setSeedMessage(result.message);
+                          if (result.success) {
+                            // Reload suppliers after seeding
+                            const updatedSuppliers = await fetchSuppliers();
+                            setSuppliers(updatedSuppliers);
+                          }
+                        } catch (err: any) {
+                          setSeedMessage(`Error: ${err.message}`);
+                        } finally {
+                          setSeeding(false);
+                        }
+                      }}
+                      disabled={seeding}
+                      className="w-full bg-blue-500/20 hover:bg-blue-500/30 border-2 border-blue-400/50 text-blue-200 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {seeding ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-blue-200 border-t-transparent rounded-full"></div>
+                          <span>Seeding Database...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Package className="w-4 h-4" />
+                          <span>Seed Database (Add Suppliers & Data)</span>
+                        </>
+                      )}
+                    </button>
+                    {seedMessage && (
+                      <div className={`mt-3 px-4 py-2 rounded-lg text-xs font-medium ${
+                        seedMessage.includes('Success') 
+                          ? 'bg-green-500/20 text-green-200 border border-green-400/50' 
+                          : 'bg-red-500/20 text-red-200 border border-red-400/50'
+                      }`}>
+                        {seedMessage}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Enhanced Security badge */}
                 <div className="mt-8 pt-6 border-t border-white/10">
