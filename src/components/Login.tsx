@@ -17,10 +17,11 @@ export function Login() {
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [accessGranted, setAccessGranted] = useState(false);
   
-  // Check if running in development mode (localhost or dev environment)
+  // Check if running in development mode (localhost or dev environment OR if VITE_DEV_MODE is explicitly true)
   const isDevMode = (import.meta.env.DEV || 
                     window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1') &&
+                    window.location.hostname === '127.0.0.1' ||
+                    import.meta.env.VITE_DEV_MODE === 'true') &&
                     import.meta.env.VITE_DEV_MODE !== 'false';
   
   // In dev mode, password is optional (for easy testing)
@@ -28,7 +29,7 @@ export function Login() {
   
   // Protection code - required before login (set in .env or use default)
   const requiredAccessCode = import.meta.env.VITE_ACCESS_CODE || 'RF2024';
-  const requireAccessCode = !isDevMode; // Always require in production
+  const requireAccessCode = !isDevMode; // Skip access code in dev mode
 
   useEffect(() => {
     // Check if access was already granted this session
