@@ -5,6 +5,7 @@
 Just run this one command:
 
 ```bash
+
 ./publish.sh
 ```
 
