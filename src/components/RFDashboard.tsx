@@ -126,6 +126,13 @@ export function RFDashboard() {
       setWeeks(weeksData);
       setItems(itemsData);
       setSuppliers(suppliersData);
+      
+      if (suppliersData.length === 0) {
+        logger.warn('No suppliers found in database');
+        showToast('No suppliers found. Please add suppliers to the database.', 'warning');
+      } else {
+        logger.debug(`Loaded ${suppliersData.length} suppliers`);
+      }
 
       // Batch fetch all quotes at once instead of sequential loop (N+1 optimization)
       const { supabase } = await import('../utils/supabase');

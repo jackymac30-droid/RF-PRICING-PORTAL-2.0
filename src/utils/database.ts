@@ -44,10 +44,16 @@ export function loadSession(): Session | null {
 }
 
 export async function fetchSuppliers(): Promise<Supplier[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('suppliers')
     .select('*')
     .order('name');
+  
+  if (error) {
+    console.error('Error fetching suppliers:', error);
+    return [];
+  }
+  
   return data || [];
 }
 
