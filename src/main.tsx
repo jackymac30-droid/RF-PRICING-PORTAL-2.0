@@ -20,23 +20,28 @@ if (!supabaseUrl || !supabaseAnonKey) {
   if (!supabaseUrl) missing.push('VITE_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL');
   if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
-  // Missing required environment variables
-  document.body.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui; background: #fee;">
-      <div style="max-width: 500px; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <h1 style="color: #dc2626; margin: 0 0 1rem 0;">Configuration Error</h1>
-        <p style="margin: 0 0 1rem 0;">Missing required environment variables:</p>
-        <ul style="margin: 0 0 1rem 0; color: #dc2626; font-weight: bold;">
-          ${missing.map(v => `<li>${v}</li>`).join('')}
-        </ul>
-        <p style="margin: 0; color: #666; font-size: 0.9rem;">
-          Contact your administrator or check deployment configuration.
-          ${isNetlify ? '<br><br><strong>Netlify:</strong> Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify Dashboard → Environment Variables' : ''}
-        </p>
+  // Missing required environment variables - show error and prevent app from loading
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    rootElement.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui; background: #fee;">
+        <div style="max-width: 500px; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          <h1 style="color: #dc2626; margin: 0 0 1rem 0;">Configuration Error</h1>
+          <p style="margin: 0 0 1rem 0;">Missing required environment variables:</p>
+          <ul style="margin: 0 0 1rem 0; color: #dc2626; font-weight: bold;">
+            ${missing.map(v => `<li>${v}</li>`).join('')}
+          </ul>
+          <p style="margin: 0; color: #666; font-size: 0.9rem;">
+            Contact your administrator or check deployment configuration.
+            ${isNetlify ? '<br><br><strong>Netlify:</strong> Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify Dashboard → Environment Variables' : '<br><br><strong>Local:</strong> Create a .env file in the project root with:<br>VITE_SUPABASE_URL=your-url<br>VITE_SUPABASE_ANON_KEY=your-key'}
+          </p>
+        </div>
       </div>
-    </div>
-  `;
-  throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    `;
+  }
+  // Don't throw - just stop execution so error message stays visible
+  console.error('Missing required environment variables:', missing.join(', '));
+  return;
 }
 
 // Supabase environment variables loaded
