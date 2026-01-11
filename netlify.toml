@@ -1,5 +1,5 @@
 # Netlify Configuration for Berry Procurement Demo
-# PRODUCTION-READY — AUTO-DEPLOY ON GITHUB PUSH
+# NETLIFY BIG LEAGUES READY — AUTO-DEPLOY PERFECT
 
 [build]
   # Build command (Vite + React)
