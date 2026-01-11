@@ -73,6 +73,7 @@ export function VolumeAcceptance({ weekId }: VolumeAcceptanceProps) {
       // 4. awarded_volume (updated): Final volume after RF accepts supplier response
       // Show quotes that either have offered_volume OR awarded_volume (ready to be sent or already finalized)
       // Defensive: Only show quotes that exist (partial submissions safe - only show what was allocated)
+      // FIXED 400 ERROR: Fetch all quotes and filter client-side instead of invalid .or() syntax
       const { data, error } = await supabase
         .from('quotes')
         .select(`
@@ -90,7 +91,6 @@ export function VolumeAcceptance({ weekId }: VolumeAcceptanceProps) {
           supplier:suppliers!inner(name)
         `)
         .eq('week_id', weekId)
-        .or('offered_volume.gt.0,awarded_volume.gt.0')
         .order('item_id');
 
       if (error) {

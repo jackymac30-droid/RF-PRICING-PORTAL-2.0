@@ -1124,32 +1124,37 @@ export async function getQuotesForItem(weekId: string, itemId: string): Promise<
 }
 
 export async function fetchVolumeNeeds(weekId: string): Promise<WeekItemVolume[]> {
-  // Select specific columns to avoid issues if locked column doesn't exist yet
-  const { data, error } = await supabase
-    .from('week_item_volumes')
-    .select('id, week_id, item_id, volume_needed, created_at, updated_at, locked')
-    .eq('week_id', weekId);
+  try {
+    // Select specific columns to avoid issues if locked column doesn't exist yet
+    const { data, error } = await supabase
+      .from('week_item_volumes')
+      .select('id, week_id, item_id, volume_needed, created_at, updated_at, locked')
+      .eq('week_id', weekId);
 
-  if (error) {
-    // If error is about locked column, try again without it
-    if (error.code === 'PGRST204' || error.message?.includes('locked')) {
-      const { data: dataWithoutLocked, error: error2 } = await supabase
-        .from('week_item_volumes')
-        .select('id, week_id, item_id, volume_needed, created_at, updated_at')
-        .eq('week_id', weekId);
-      
-      if (error2) {
-        logger.error('Error fetching volume needs:', error2);
-        return [];
+    if (error) {
+      // If error is about locked column, try again without it
+      if (error.code === 'PGRST204' || error.message?.includes('locked')) {
+        const { data: dataWithoutLocked, error: error2 } = await supabase
+          .from('week_item_volumes')
+          .select('id, week_id, item_id, volume_needed, created_at, updated_at')
+          .eq('week_id', weekId);
+        
+        if (error2) {
+          logger.error('Error fetching volume needs:', error2);
+          console.error('Error fetching volume needs:', error2.message);
+          return [];
+        }
+        
+        // Return records WITHOUT locked property (don't add locked: false)
+        // This allows the UI to detect that the column doesn't exist
+        const result = (dataWithoutLocked || []) as WeekItemVolume[];
+        console.log(`Volume needs loaded: ${result.length} items`);
+        return result;
       }
-      
-      // Return records WITHOUT locked property (don't add locked: false)
-      // This allows the UI to detect that the column doesn't exist
-      return (dataWithoutLocked || []) as WeekItemVolume[];
+      logger.error('Error fetching volume needs:', error);
+      console.error('Error fetching volume needs:', error.message);
+      return [];
     }
-    logger.error('Error fetching volume needs:', error);
-    return [];
-  }
 
   // If no rows exist, ensure they're created (backward compatibility)
   if (!data || data.length === 0) {
@@ -2171,7 +2176,9 @@ export async function delete2lbStrawberryData(): Promise<{ success: boolean; mes
       .from('items')
       .select('id, name, pack_size')
       .ilike('name', '%strawberry%')
-      .or('pack_size.ilike.%2lb%,pack_size.ilike.%2 lb%');
+      // FIXED 400 ERROR: Use separate queries instead of invalid .or() syntax
+      // Fetch all matching items and filter client-side
+      .ilike('pack_size', '%2lb%');
 
     if (itemsError) {
       logger.error('Error finding 2lb strawberry items:', itemsError);
@@ -2462,7 +2469,8 @@ export async function resetDemoDataLegacy(): Promise<{ success: boolean; message
         .select('id, name, pack_size, organic_flag')
         .eq('name', itemData.name)
         .eq('pack_size', itemData.pack_size)
-        .or(`organic_flag.is.null,organic_flag.eq.${itemData.organic_flag}`)
+        // FIXED 400 ERROR: Use eq() for organic_flag matching instead of invalid .or() syntax
+        .eq('organic_flag', itemData.organic_flag)
         .maybeSingle();
 
       if (existing) {

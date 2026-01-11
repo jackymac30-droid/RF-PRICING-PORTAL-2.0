@@ -179,13 +179,21 @@ export function RFDashboard() {
     // Check if there are supplier volume responses for this week
         const checkForResponses = async () => {
       try {
-        // Optimized: Use single query with OR condition instead of two separate queries
-        const { data: responseQuotes } = await supabase
+        // FIXED 400 ERROR: Use separate queries instead of invalid .or() syntax
+        // Check for supplier responses (supplier_volume_response is not null) OR supplier_volume_accepted > 0
+        const { data: responseQuotes1 } = await supabase
           .from('quotes')
           .select('id')
           .eq('week_id', selectedWeek.id)
-          .or('supplier_volume_response.not.is.null,supplier_volume_accepted.gt.0')
+          .not('supplier_volume_response', 'is', null)
           .limit(1);
+        const { data: responseQuotes2 } = await supabase
+          .from('quotes')
+          .select('id')
+          .eq('week_id', selectedWeek.id)
+          .gt('supplier_volume_accepted', 0)
+          .limit(1);
+        const responseQuotes = (responseQuotes1 && responseQuotes1.length > 0) || (responseQuotes2 && responseQuotes2.length > 0) ? [{ id: 'found' }] : null;
         const hasResponses = responseQuotes && responseQuotes.length > 0;
         
         if (hasResponses && mainView !== 'volume_acceptance') {
@@ -287,13 +295,21 @@ export function RFDashboard() {
         setSelectedWeek(weekToSelect);
         // Check if this week has allocations submitted and supplier responses - auto-navigate to acceptance tab
         if (weekToSelect.allocation_submitted) {
-          // Optimized: Use single query with OR condition instead of two separate queries
-          const { data: responseQuotes } = await supabase
+          // FIXED 400 ERROR: Use separate queries instead of invalid .or() syntax
+          // Check for supplier responses (supplier_volume_response is not null) OR supplier_volume_accepted > 0
+          const { data: responseQuotes1 } = await supabase
             .from('quotes')
             .select('id')
             .eq('week_id', weekToSelect.id)
-            .or('supplier_volume_response.not.is.null,supplier_volume_accepted.gt.0')
+            .not('supplier_volume_response', 'is', null)
             .limit(1);
+          const { data: responseQuotes2 } = await supabase
+            .from('quotes')
+            .select('id')
+            .eq('week_id', weekToSelect.id)
+            .gt('supplier_volume_accepted', 0)
+            .limit(1);
+          const responseQuotes = (responseQuotes1 && responseQuotes1.length > 0) || (responseQuotes2 && responseQuotes2.length > 0) ? [{ id: 'found' }] : null;
           const hasResponseQuotes = responseQuotes && responseQuotes.length > 0;
           
           if (hasResponseQuotes) {
