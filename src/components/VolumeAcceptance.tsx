@@ -139,7 +139,7 @@ export function VolumeAcceptance({ weekId }: VolumeAcceptanceProps) {
       // }
       // ... auto-accept code removed to fix supplier responses not showing
 
-      const mapped: VolumeAllocation[] = data.map((q) => {
+      const mapped: VolumeAllocation[] = filteredData.map((q) => {
         const pricing = pricingMap.get(q.item_id) as { avg_price?: number; dlvd_price?: number; rebate?: number; freight?: number; margin?: number } | undefined;
         
         // Use defaults if pricing not found (matches PricingCalculations defaults)
