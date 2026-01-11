@@ -599,40 +599,7 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
       if (success) {
         // Reload from DB to sync lockedSKUs state (ensures persistence)
         logger.debug('Reloading data to sync lockedSKUs state');
-        
-        // Directly query locked state from DB to ensure accuracy (bypass column detection issues)
-        try {
-          const { data: volumeData, error: queryError } = await supabase
-            .from('week_item_volumes')
-            .select('item_id, locked')
-            .eq('week_id', selectedWeek.id)
-            .eq('item_id', itemId)
-            .maybeSingle();
-          
-          if (!queryError && volumeData && 'locked' in volumeData) {
-            const isLocked = volumeData.locked === true || 
-                           (typeof volumeData.locked === 'number' && volumeData.locked === 1) || 
-                           (typeof volumeData.locked === 'string' && volumeData.locked === 'true');
-            
-            // Update local state based on DB verification
-            setLockedSKUs(prev => {
-              const next = new Set(prev)
-              if (isLocked) {
-                next.add(itemId)
-              } else {
-                next.delete(itemId)
-              }
-              return next
-            })
-            logger.debug('Lock state verified from DB', { itemId, isLocked });
-          } else {
-            // If query fails, still call load() to refresh from fetchVolumeNeeds
-            await load()
-          }
-        } catch (verifyErr) {
-          logger.warn('Error verifying lock state directly, falling back to load():', verifyErr);
-          await load()
-        }
+        await load()
         
         showToast(shouldLock ? `SKU locked` : `SKU unlocked`, 'success')
         logger.debug('Lock/unlock operation completed successfully', { itemId, shouldLock });
@@ -653,13 +620,14 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
     
     // Check if at least ONE SKU with quotes is locked (not all SKUs - suppliers may not quote every SKU)
     const quotedRows = rowsForUI.filter(r => r.hasPricing)
-    const atLeastOneSKULocked = quotedRows.some(r => {
+    // Check if all priced SKUs are locked
+    const allPricedSKUsLocked = quotedRows.every(r => {
       const itemId = r.item?.id || ''
       return lockedSKUs.has(itemId)
     })
     
-    if (!atLeastOneSKULocked) {
-      showToast('At least one SKU must be locked before sending allocations. Complete allocation and click "Lock" on at least one SKU.', 'error')
+    if (!allPricedSKUsLocked) {
+      showToast('All priced SKUs must be locked before sending allocations. Click "Lock" on all priced SKUs.', 'error')
       return
     }
 
@@ -755,21 +723,27 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
   //   return quotedRows.every(r => r.allLocked)
   // }, [rowsForUI])
   
-  // Check if all SKUs that have quotes from suppliers are locked (via per-SKU lock button)
-  // Changed: At least ONE SKU with quotes must be locked (not all - suppliers may not quote every SKU)
-  const atLeastOneSKULocked = useMemo(() => {
+  // Check if all priced SKUs have finalized pricing (rf_final_fob)
+  const allPricedSKUsFinalized = useMemo(() => {
     const quotedRows = rowsForUI.filter(r => r.hasPricing)
     if (quotedRows.length === 0) return false
-    // At least one SKU that has quotes from suppliers must be locked
+    // All priced SKUs must have rf_final_fob set for all their quotes
+    return quotedRows.every(row => 
+      row.pricedQuotes.length > 0 && 
+      row.pricedQuotes.every(q => q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)
+    )
+  }, [rowsForUI])
+
+  // Check if all priced SKUs are allocation-locked (week_item_volumes.locked)
+  const allPricedSKUsLocked = useMemo(() => {
+    const quotedRows = rowsForUI.filter(r => r.hasPricing)
+    if (quotedRows.length === 0) return false
+    // All priced SKUs must be locked (via per-SKU lock button)
     const quotedItemIds = quotedRows.map(r => r.item?.id).filter(Boolean) as string[]
-    const result = quotedItemIds.some(itemId => lockedSKUs.has(itemId))
-    return result
+    return quotedItemIds.length > 0 && quotedItemIds.every(itemId => lockedSKUs.has(itemId))
   }, [rowsForUI, lockedSKUs])
 
-  // Global "send allocations" enabled if:
-  // 1. All quoted SKUs have finalized pricing (have rf_final_fob)
-  // 2. All SKUs with supplier quotes are locked (via per-SKU lock button)
-  // 3. At least one priced quote has award > 0
+  // At least one awarded_volume > 0 exists
   const hasAnyAllocation = useMemo(() => {
     for (const row of rowsForUI) {
       if (!row.hasPricing) continue
@@ -807,17 +781,18 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
             <button
             onClick={handleSendAllocations}
             disabled={(() => {
-              // Only require: can edit, not submitting, has allocations, and at least ONE SKU is locked
-              // Changed from "all SKUs" to "at least one SKU" since suppliers may not quote every SKU
-              const disabled = !canEdit || submitting || !hasAnyAllocation || !atLeastOneSKULocked;
+              // Require: can edit, not submitting, all priced SKUs finalized, all priced SKUs locked, at least one allocation
+              const disabled = !canEdit || submitting || !allPricedSKUsFinalized || !allPricedSKUsLocked || !hasAnyAllocation;
               return disabled;
             })()}
               className="flex items-center gap-2 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-bold transition"
               title={
                 !canEdit 
                   ? 'Week is locked' 
-                  : !atLeastOneSKULocked
-                  ? `At least one SKU must be locked before sending allocations. Currently locked: ${lockedSKUs.size} of ${rowsForUI.filter(r => r.hasPricing).length} quoted SKUs. Complete allocation and click "Lock" on at least one SKU.`
+                  : !allPricedSKUsFinalized
+                  ? 'All priced SKUs must have finalized pricing (rf_final_fob) before sending allocations'
+                  : !allPricedSKUsLocked
+                  ? `All priced SKUs must be locked before sending allocations. Currently locked: ${lockedSKUs.size} of ${rowsForUI.filter(r => r.hasPricing).length} quoted SKUs. Click "Lock" on all priced SKUs.`
                   : !hasAnyAllocation 
                   ? 'Allocate at least one volume first' 
                   : 'Send allocations to suppliers for approval or revision'

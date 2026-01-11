@@ -134,11 +134,16 @@ export function filterStandardSKUs(items: Item[], options?: {
     }
     
     // Normalize Blackberry and Raspberry pack_size to "12ozx6" (replace variants)
+    // CRITICAL: Filter out items that don't match "12ozx6" pattern - only allow 12ozx6 variants
     if ((itemNameLower === 'blackberry' || itemNameLower === 'raspberry')) {
       const packLower = item.pack_size.toLowerCase().trim();
-      // Normalize any variant of "12ozx6" to exact "12ozx6"
-      if (packLower.includes('12') && (packLower.includes('oz') || packLower.includes('ozx')) && packLower.includes('6')) {
+      const packNormalizedCheck = packLower.replace(/\s+/g, '').replace(/×/g, 'x').replace(/-/g, '');
+      // Only include items that match "12ozx6" pattern (12, oz/ozx, 6)
+      if (packNormalizedCheck.includes('12') && (packNormalizedCheck.includes('oz') || packNormalizedCheck.includes('ozx')) && packNormalizedCheck.includes('6')) {
         normalizedPackSize = '12ozx6';
+      } else {
+        // Filter out items that don't match - skip this item
+        continue;
       }
     }
     
