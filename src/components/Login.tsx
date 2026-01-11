@@ -31,18 +31,20 @@ export function Login() {
   
   // Protection code - required before login (set in .env or use default)
   const requiredAccessCode = import.meta.env.VITE_ACCESS_CODE || 'RF2024';
-  const requireAccessCode = !isDevMode; // Skip access code in dev mode
+  // Skip access code in dev mode or demo mode
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+  const requireAccessCode = !isDevMode && !isDemoMode;
 
   useEffect(() => {
     // Check if access was already granted this session
     const storedAccess = sessionStorage.getItem('app_access_granted');
     if (storedAccess === 'true') {
       setAccessGranted(true);
-    } else if (isDevMode) {
-      // Auto-grant in dev mode
+    } else if (isDevMode || isDemoMode) {
+      // Auto-grant in dev mode or demo mode
       setAccessGranted(true);
     }
-  }, [isDevMode]);
+  }, [isDevMode, isDemoMode]);
 
   useEffect(() => {
     async function loadSuppliers() {
