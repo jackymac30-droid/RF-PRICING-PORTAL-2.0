@@ -4,7 +4,7 @@
 [build]
   # Build command (Vite + React)
   command = "npm run build"
-  # Publish directory (Vite outputs to 'dist')
+  # Publish directory (Vite outputs to 'dist', NOT .next - this is Vite, not Next.js)
   publish = "dist"
 
 [build.environment]
