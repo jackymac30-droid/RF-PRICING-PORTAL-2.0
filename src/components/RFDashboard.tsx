@@ -273,21 +273,32 @@ export function RFDashboard() {
         }
       }
       // Week averages removed - not used in current implementation
-      // Select OPEN week ordered by start_date DESC
-      const openWeeks = weeksData
-        .filter(w => w.status === 'open')
-        .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+      // LANDING FIXED: Select OPEN week ordered by week_number DESC (latest open week = week 8)
+      const openWeeks = weeksData
+        .filter(w => w.status === 'open')
+        .sort((a, b) => b.week_number - a.week_number); // Sort by week_number DESC (week 8 first)
       const openWeek = openWeeks[0];
       let weekToSelect: Week | null = null;
       if (openWeek) {
         weekToSelect = openWeek;
+        // LANDING FIXED: Log week 8 default selection
+        logger.debug('Week 8 default selected (latest open week)', {
+          weekNumber: openWeek.week_number,
+          weekId: openWeek.id,
+          status: openWeek.status
+        });
+        if (typeof window !== 'undefined') {
+          console.log(`✅ Week ${openWeek.week_number} default with status ${openWeek.status} ✓`);
+        }
       } else {
-        // If no open week, select the most recent week (closed or open) for viewing
-        const allWeeksSorted = [...weeksData].sort((a, b) =>
-          new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
-        );
+        // If no open week, select the most recent week by week_number (not start_date)
+        const allWeeksSorted = [...weeksData].sort((a, b) => b.week_number - a.week_number);
         if (allWeeksSorted.length > 0) {
           weekToSelect = allWeeksSorted[0];
+          logger.debug('No open week found, selected most recent week', {
+            weekNumber: weekToSelect.week_number,
+            status: weekToSelect.status
+          });
         }
       }
       

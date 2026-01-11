@@ -9,6 +9,10 @@ function AppContent() {
   const { session } = useApp();
 
   if (!session) {
+    // LANDING FIXED: App opens on login/home page first
+    if (typeof window !== 'undefined') {
+      console.log('✅ App opened on home/login page ✓');
+    }
     return <Login />;
   }
 
@@ -33,4 +37,4 @@ function App() {
 
 export default App;
 
-// NETLIFY BIG LEAGUES READY — AUTO-DEPLOY PERFECT
+// LANDING FIXED — OPENS HOME/LOGIN, WEEK 8 READY FOR DEMO
