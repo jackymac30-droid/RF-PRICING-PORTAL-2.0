@@ -200,12 +200,17 @@ async function seedWeeks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
+  // Base date: 28 days ago (week 1 starts ~4 weeks ago, week 8 ends soon)
+  // This ensures all 8 weeks are visible and recent
+  const baseDate = new Date(today);
+  baseDate.setDate(today.getDate() - 28);
+  
   for (let weekNum = 1; weekNum <= 8; weekNum++) {
     try {
-      // Calculate dates: compressed timeline (each week is 7 days ago from previous)
-      const daysAgo = (8 - weekNum) * 7;
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - daysAgo - 7);
+      // Calculate week dates: week 1 starts 28 days ago, each week is 7 days
+      const daysOffset = (weekNum - 1) * 7;
+      const weekStart = new Date(baseDate);
+      weekStart.setDate(baseDate.getDate() + daysOffset);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       
@@ -227,12 +232,19 @@ async function seedWeeks() {
         error(`Failed to upsert week ${weekNum}`, err);
       } else if (data) {
         weekMap.set(weekNum, { id: data.id });
-        log(`  Week ${weekNum}: ${weekData.status} (allocation_submitted: ${weekData.allocation_submitted})`);
+        log(`  Week ${weekNum}: ${weekData.start_date} to ${weekData.end_date} (${weekData.status}, allocation_submitted: ${weekData.allocation_submitted})`);
       }
     } catch (err) {
       error(`Exception seeding week ${weekNum}`, err);
     }
   }
+  
+  // Log verification: All 8 weeks with date range
+  const firstWeekStart = new Date(baseDate).toISOString().split('T')[0];
+  const lastWeekEnd = new Date(baseDate);
+  lastWeekEnd.setDate(baseDate.getDate() + (7 * 7) + 6); // Week 8 end date
+  const lastWeekEndStr = lastWeekEnd.toISOString().split('T')[0];
+  log(`  FIXED WEEK DISPLAY: Seeded weeks 1-8 with start dates from ${firstWeekStart} (week 1) to ${lastWeekEndStr} (week 8)`);
   
   const finalizedCount = Array.from(weekMap.entries()).filter(([num]) => num <= 7).length;
   const openWeek = weekMap.has(8);

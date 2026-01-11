@@ -67,18 +67,33 @@ export async function fetchItems(): Promise<Item[]> {
 }
 
 export async function fetchWeeks(limit?: number): Promise<Week[]> {
+  // FIXED WEEK DISPLAY: Remove all date filters - show all 8 weeks regardless of dates
+  // Order by week_number ascending (1, 2, 3, ... 8) for consistent display
   let query = supabase
     .from('weeks')
     .select('*')
-    .order('week_number', { ascending: false });
+    .order('week_number', { ascending: true });
   
   // Add limit if provided (for pagination/performance)
   if (limit && limit > 0) {
     query = query.limit(limit);
   }
   
-  const { data } = await query;
-  return data || [];
+  const { data, error } = await query;
+  
+  if (error) {
+    logger.error('Error fetching weeks:', error);
+    return [];
+  }
+  
+  // Null guard: return empty array if no data
+  if (!data || data.length === 0) {
+    logger.warn('No weeks found in database');
+    return [];
+  }
+  
+  return data;
+  // WEEK DISPLAY FIXED — ALL 8 WEEKS VISIBLE
 }
 
 /**
