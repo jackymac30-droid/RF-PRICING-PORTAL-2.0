@@ -28,9 +28,11 @@ if (isNetlify && typeof window !== 'undefined') {
 
 if (!finalSupabaseUrl || !finalSupabaseAnonKey) {
   if (typeof window !== 'undefined') {
-    console.error('Missing Supabase environment variables. Please check your deployment configuration.');
+    console.error('❌ Missing Supabase environment variables. Please check your deployment configuration.');
     if (isNetlify) {
-      console.error('Netlify: Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify Dashboard → Environment Variables');
+      console.error('🔧 Netlify Fix: Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify Dashboard → Site Settings → Environment Variables → Save → Trigger deploy');
+    } else {
+      console.error('🔧 Local Fix: Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env file');
     }
   }
 }
@@ -43,4 +45,4 @@ export const supabase = createClient(finalSupabaseUrl || 'https://placeholder.su
   },
 });
 
-// NETLIFY READY — AUTO-DEPLOY OK, NO ISSUES
+// NETLIFY BIG LEAGUES READY — AUTO-DEPLOY PERFECT

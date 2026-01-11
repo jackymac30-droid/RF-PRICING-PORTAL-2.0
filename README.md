@@ -32,21 +32,22 @@ See `DEMO.md` for full setup guide.
 
 Deployed on Netlify with automatic builds from GitHub.
 
-### Netlify Setup (One-Time):
+### Netlify Production Setup (One-Time):
 
 1. **Connect GitHub**: Netlify Dashboard → Add new site → Import from GitHub → Select repository
-2. **Set Environment Variables**: Site Settings → Environment Variables → Add:
+2. **Set Environment Variables** (REQUIRED): Site Settings → Environment Variables → Add:
    - `VITE_SUPABASE_URL` = Your Supabase project URL
    - `VITE_SUPABASE_ANON_KEY` = Supabase anon key (public)
    - (Optional) `SUPABASE_SERVICE_ROLE_KEY` = Service role key (SECRET - for seeding only, run locally)
+   - **After adding**: Netlify Dashboard → Deploys → "Trigger deploy" → "Clear cache and deploy site" → Deploy
 3. **Build Settings** (auto-configured via `netlify.toml`):
-   - Build command: `npm run build`
-   - Publish directory: `dist`
+   - Build command: `npm run build` (Vite)
+   - Publish directory: `dist` (Vite output)
    - Auto-deploy: Enabled (deploys on push to `main` branch)
 
 ### After Push to GitHub:
 
-1. **Auto-deploy**: Netlify automatically deploys from GitHub (branch: `main`)
+1. **Auto-deploy**: Netlify automatically deploys from GitHub (branch: `main`) in 1-3 minutes
 2. **If old version shows**: 
    - Netlify Dashboard → Deploys → "Trigger deploy" → Check "Clear cache and deploy site" → Deploy
    - Wait 2-3 minutes
@@ -57,3 +58,13 @@ Deployed on Netlify with automatic builds from GitHub.
 Your site: `https://your-site.netlify.app`
 
 **After seeding (run `demo-magic-button.ts` locally), hard refresh Netlify URL to see demo data.**
+
+### Final GitHub Push:
+
+```bash
+git add .
+git commit -m "Netlify production ready — big leagues deploy"
+git push origin main
+```
+
+After push: Netlify auto-deploys in 1-3 min. If old version: Netlify → Deploys → Trigger deploy → Clear cache

@@ -173,21 +173,23 @@ If your app still shows empty data after seeding, run `seed-demo-rls-access.sql`
 
 ## Netlify Deployment
 
-### Netlify Environment Variables (Set in Netlify Dashboard → Site Settings → Environment Variables):
+### Netlify Environment Variables (REQUIRED - Set in Netlify Dashboard → Site Settings → Environment Variables):
 
-**Required for app to work:**
-- `VITE_SUPABASE_URL` - Your Supabase project URL (or `NEXT_PUBLIC_SUPABASE_URL` if using Next.js)
-- `VITE_SUPABASE_ANON_KEY` - Supabase anon key (public) (or `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+**Required for app to work (BIG LEAGUES PRODUCTION):**
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Supabase anon key (public)
 
-**Optional (for seeding only - run locally):**
+**Optional (for seeding only - run locally, NOT in Netlify):**
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (SECRET - never expose in client code)
 
 **How to set:**
 1. Go to Netlify Dashboard → Your Site → Site Settings → Environment Variables
 2. Click "Add a variable"
-3. Add each variable above
+3. Add each required variable above
 4. Click "Save"
-5. Go to Deploys → "Trigger deploy" → "Deploy site" (to apply env vars)
+5. **IMPORTANT**: Go to Deploys → "Trigger deploy" → Check "Clear cache and deploy site" → "Deploy site" (to apply env vars)
+6. Wait 2-3 minutes for deploy to complete
+7. Hard refresh browser: Ctrl+Shift+R / Cmd+Shift+R
 
 ### Netlify Build Settings (Auto-configured via netlify.toml):
 

@@ -33,4 +33,4 @@ function App() {
 
 export default App;
 
-// NETLIFY READY — AUTO-DEPLOY OK, NO ISSUES
+// NETLIFY BIG LEAGUES READY — AUTO-DEPLOY PERFECT

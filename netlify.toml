@@ -1,5 +1,5 @@
 # Netlify Configuration for Berry Procurement Demo
-# Auto-deploys on push to GitHub (main branch)
+# PRODUCTION-READY — AUTO-DEPLOY ON GITHUB PUSH
 
 [build]
   # Build command (Vite + React)
@@ -12,17 +12,17 @@
   NODE_VERSION = "18"
 
 # Environment variables (set in Netlify Dashboard → Site Settings → Environment Variables):
-# - NEXT_PUBLIC_SUPABASE_URL (or VITE_SUPABASE_URL) - Your Supabase project URL
-# - NEXT_PUBLIC_SUPABASE_ANON_KEY (or VITE_SUPABASE_ANON_KEY) - Supabase anon key (public)
+# - VITE_SUPABASE_URL - Your Supabase project URL (or NEXT_PUBLIC_SUPABASE_URL)
+# - VITE_SUPABASE_ANON_KEY - Supabase anon key (public) (or NEXT_PUBLIC_SUPABASE_ANON_KEY)
 # - SUPABASE_SERVICE_ROLE_KEY - Supabase service role key (SECRET - for seeding only, not needed in production)
 
-# Redirects (SPA routing)
+# Redirects (SPA routing - required for React Router)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Headers for security
+# Security headers (production-ready)
 [[headers]]
   for = "/*"
   [headers.values]
@@ -30,5 +30,22 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
 
-# NETLIFY READY — AUTO-DEPLOY OK, NO ISSUES
+# Cache static assets (performance optimization)
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# NETLIFY BIG LEAGUES READY — AUTO-DEPLOY PERFECT

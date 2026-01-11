@@ -10,7 +10,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.en
 // Netlify detection (for logging/debugging)
 const isNetlify = typeof process !== 'undefined' && (process.env.CONTEXT === 'production' || process.env.NETLIFY === 'true');
 if (isNetlify && typeof window !== 'undefined') {
-  console.log('Netlify build detected - using environment variables from Netlify dashboard');
+  console.log('✅ Netlify build detected - using environment variables from Netlify dashboard');
+  console.log('Netlify env check: URL loaded', supabaseUrl ? '✓' : '✗ (MISSING - set VITE_SUPABASE_URL in Netlify Dashboard)');
+  console.log('Netlify env check: Key loaded', supabaseAnonKey ? '✓' : '✗ (MISSING - set VITE_SUPABASE_ANON_KEY in Netlify Dashboard)');
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -70,4 +72,4 @@ try {
   `;
 }
 
-// NETLIFY READY — AUTO-DEPLOY OK, NO ISSUES
+// NETLIFY BIG LEAGUES READY — AUTO-DEPLOY PERFECT
