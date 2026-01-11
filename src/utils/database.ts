@@ -1157,31 +1157,37 @@ export async function fetchVolumeNeeds(weekId: string): Promise<WeekItemVolume[]
       return [];
     }
 
-  // If no rows exist, ensure they're created (backward compatibility)
-  if (!data || data.length === 0) {
-    const { data: items } = await supabase.from('items').select('id');
-    if (items && items.length > 0) {
-      const volumeNeeds = items.map(item => ({
-        week_id: weekId,
-        item_id: item.id,
-        volume_needed: 0,
-        locked: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-      await supabase.from('week_item_volumes').upsert(volumeNeeds, {
-        onConflict: 'week_id,item_id'
-      });
-      // Return the newly created rows
-      const { data: newData } = await supabase
-        .from('week_item_volumes')
-        .select('*')
-        .eq('week_id', weekId);
-      return newData || [];
+    // If no rows exist, ensure they're created (backward compatibility)
+    if (!data || data.length === 0) {
+      const { data: items } = await supabase.from('items').select('id');
+      if (items && items.length > 0) {
+        const volumeNeeds = items.map(item => ({
+          week_id: weekId,
+          item_id: item.id,
+          volume_needed: 0,
+          locked: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+        await supabase.from('week_item_volumes').upsert(volumeNeeds, {
+          onConflict: 'week_id,item_id'
+        });
+        // Return the newly created rows
+        const { data: newData } = await supabase
+          .from('week_item_volumes')
+          .select('*')
+          .eq('week_id', weekId);
+        return newData || [];
+      }
     }
-  }
 
-  return data || [];
+    return data || [];
+  } catch (err: any) {
+    // FIXED SYNTAX - TRY/CATCH CLOSED
+    logger.error('Error in fetchVolumeNeeds:', err);
+    console.error('Error in fetchVolumeNeeds:', err?.message || err);
+    return [];
+  }
 }
 
 export async function updateVolumeNeeded(
