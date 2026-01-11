@@ -76,37 +76,5 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 }
 
-// Supabase environment variables loaded
-
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error('Root element not found');
-}
-
-try {
-  createRoot(rootElement).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
-} catch (error: any) {
-  // Failed to render app - show error UI
-  rootElement.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui; background: #fee; padding: 20px;">
-      <div style="max-width: 600px; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-        <h1 style="color: #dc2626; margin: 0 0 1rem 0; font-size: 24px;">Application Error</h1>
-        <p style="margin: 0 0 1rem 0; color: #333;">The application failed to load. Please check the browser console (F12) for details.</p>
-        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 1rem; margin: 1rem 0;">
-          <p style="margin: 0; color: #991b1b; font-family: monospace; font-size: 14px; word-break: break-all;">
-            ${error?.message || error?.toString() || 'Unknown error'}
-          </p>
-        </div>
-        <button onclick="window.location.reload()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-          Reload Page
-        </button>
-      </div>
-    </div>
-  `;
-}
-
 // NETLIFY BIG LEAGUES READY — AUTO-DEPLOY PERFECT
+// DOUBLED SCREENS FIXED: Removed duplicate React mounting code
