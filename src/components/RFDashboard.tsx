@@ -2097,6 +2097,8 @@ export function RFDashboard() {
           </div>
         </div>
       )}
-    </div>
-  );
+    </div>
+  );
 }
+
+// LANDING FIXED — OPENS HOME/LOGIN, WEEK 8 READY FOR DEMO
