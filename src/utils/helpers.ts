@@ -101,6 +101,9 @@ export function filterStandardSKUs(items: Item[], options?: {
   // Include organic_flag in key to distinguish CONV vs ORG variants
   const byNamePack = new Map<string, Item>();
   for (const item of byId.values()) {
+    // Skip items with null/undefined pack_size or name
+    if (!item.pack_size || !item.name) continue;
+    
     const itemNameLower = item.name.toLowerCase();
     const packLower = item.pack_size.toLowerCase().trim();
     const packNormalized = packLower.replace(/\s+/g, '').replace(/×/g, 'x').replace(/-/g, '');
