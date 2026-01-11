@@ -241,7 +241,14 @@ export function RFDashboard() {
         fetchItems(),
         fetchSuppliers(),
       ]);
+      // ALL 8 WEEKS FORCED VISIBLE: Set ALL weeks, no filtering/slicing
       setWeeks(weeksData);
+      // Debug log to verify all weeks are set
+      const weekNumbers = weeksData.map(w => w.week_number).sort((a, b) => a - b);
+      if (typeof window !== 'undefined') {
+        console.log('✅ Weeks set in RFDashboard:', weekNumbers, `(Total: ${weeksData.length} weeks)`);
+      }
+      logger.debug('Weeks set in RFDashboard', { weekNumbers, count: weeksData.length });
       // Use standardized filtering to ensure same 8 SKUs across all components
       setItems(filterStandardSKUs(itemsData));
       setSuppliers(suppliersData);
