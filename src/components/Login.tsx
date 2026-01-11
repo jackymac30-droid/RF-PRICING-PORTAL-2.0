@@ -38,15 +38,10 @@ export function Login() {
   const requireAccessCode = false;
 
   useEffect(() => {
-    // Check if access was already granted this session
-    const storedAccess = sessionStorage.getItem('app_access_granted');
-    if (storedAccess === 'true') {
-      setAccessGranted(true);
-    } else if (isDevMode || isDemoMode) {
-      // Auto-grant in dev mode or demo mode
-      setAccessGranted(true);
-    }
-  }, [isDevMode, isDemoMode]);
+    // Always grant access when passwords are disabled
+    setAccessGranted(true);
+    sessionStorage.setItem('app_access_granted', 'true');
+  }, []);
 
   useEffect(() => {
     async function loadSuppliers() {
