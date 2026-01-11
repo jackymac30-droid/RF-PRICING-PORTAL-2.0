@@ -136,6 +136,7 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
       // If it doesn't exist, create it immediately
       // Check for any variant: "4x2lb", "4×2 lb", "4x2 lb", etc.
       const hasStrawberry = itemsData.some(item => {
+        if (!item.name || !item.pack_size) return false;
         if (item.name.toLowerCase() !== 'strawberry') return false;
         if (item.organic_flag !== 'CONV' && item.organic_flag) return false;
         const packLower = item.pack_size.toLowerCase().trim().replace(/\s+/g, '').replace(/×/g, 'x');
@@ -187,6 +188,9 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
       // Normalize pack sizes before deduplication (Strawberry CONV, Blackberry/Raspberry)
       const dedupeMap = new Map<string, Item>()
       for (const item of allStandardItems) {
+        // Skip items with null/undefined pack_size or name (should not happen after filterStandardSKUs, but defensive)
+        if (!item.pack_size || !item.name) continue;
+        
         // Normalize pack sizes for specific items
         let normalizedPackSize = item.pack_size;
         const itemNameLower = item.name.toLowerCase();

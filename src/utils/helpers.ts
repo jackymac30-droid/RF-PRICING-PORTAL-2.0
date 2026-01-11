@@ -180,15 +180,17 @@ export function filterStandardSKUs(items: Item[], options?: {
   // CRITICAL FINAL CHECK: Ensure strawberry CONV 4×2 lb is ALWAYS present
   // This is the most important SKU - it must never be missing
   let hasStrawberryCONV = result.find(item => 
+    item.name && item.pack_size &&
     item.name.toLowerCase() === 'strawberry' && 
     (item.organic_flag === 'CONV' || !item.organic_flag) &&
-    (item.pack_size === '4×2 lb' || item.pack_size.toLowerCase().includes('4') && item.pack_size.toLowerCase().includes('2') && item.pack_size.toLowerCase().includes('lb'))
+    (item.pack_size === '4×2 lb' || (item.pack_size.toLowerCase().includes('4') && item.pack_size.toLowerCase().includes('2') && item.pack_size.toLowerCase().includes('lb')))
   );
   
   if (!hasStrawberryCONV) {
     // Look through ORIGINAL items (before any filtering) to find strawberry CONV
     // This ensures we catch it even if it was filtered out somehow
     for (const item of items) {
+      if (!item.name || !item.pack_size) continue;
       const itemNameLower = item.name.toLowerCase();
       if (itemNameLower === 'strawberry' && (item.organic_flag === 'CONV' || !item.organic_flag)) {
         const packLower = item.pack_size.toLowerCase().trim();
@@ -212,9 +214,11 @@ export function filterStandardSKUs(items: Item[], options?: {
   
   // Ensure strawberry CONV 4×2 lb is ALWAYS first (display_order: 1)
   result.sort((a, b) => {
-    const aIsStrawberryCONV = a.name.toLowerCase() === 'strawberry' && (a.organic_flag === 'CONV' || !a.organic_flag) && 
+    const aIsStrawberryCONV = a.name && a.pack_size && 
+                               a.name.toLowerCase() === 'strawberry' && (a.organic_flag === 'CONV' || !a.organic_flag) && 
                                (a.pack_size === '4×2 lb' || (a.pack_size.toLowerCase().includes('4') && a.pack_size.toLowerCase().includes('2') && a.pack_size.toLowerCase().includes('lb')));
-    const bIsStrawberryCONV = b.name.toLowerCase() === 'strawberry' && (b.organic_flag === 'CONV' || !b.organic_flag) && 
+    const bIsStrawberryCONV = b.name && b.pack_size &&
+                               b.name.toLowerCase() === 'strawberry' && (b.organic_flag === 'CONV' || !b.organic_flag) && 
                                (b.pack_size === '4×2 lb' || (b.pack_size.toLowerCase().includes('4') && b.pack_size.toLowerCase().includes('2') && b.pack_size.toLowerCase().includes('lb')));
     if (aIsStrawberryCONV && !bIsStrawberryCONV) return -1;
     if (!aIsStrawberryCONV && bIsStrawberryCONV) return 1;
