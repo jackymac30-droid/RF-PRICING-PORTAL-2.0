@@ -1,3 +1,4 @@
+// Syntax fixed - all try/catch blocks properly closed
 import { supabase } from './supabase';
 import { logger } from './logger';
 import type { Session, Supplier, Item, Week, Quote, QuoteWithDetails, SKUStatus, SupplierStats, SupplierRanking, AnalyticsBySKU, AnalyticsBySupplier, WeekItemVolume } from '../types';
