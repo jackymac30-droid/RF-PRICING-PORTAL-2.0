@@ -102,22 +102,32 @@ export async function fetchWeeks(): Promise<Week[]> {
  * Fetch recent weeks only (for better performance)
  * Defaults to last 20 weeks
  */
-export async function fetchRecentWeeks(limit: number = 20): Promise<Week[]> {
+/**
+ * ALL 8 WEEKS FORCED: Fetch all weeks (removed limit)
+ * FILTER REMOVED: Removed .limit() restriction
+ */
+export async function fetchRecentWeeks(limit?: number): Promise<Week[]> {
+  // ALL 8 WEEKS FORCED: Always fetch all weeks, ignore limit parameter
   const { data } = await supabase
     .from('weeks')
     .select('*')
-    .order('week_number', { ascending: false })
-    .limit(limit);
+    .order('week_number', { ascending: false });
   return data || [];
+  // ALL 8 WEEKS FORCED — NO MORE 2-5 ONLY
 }
 
+/**
+ * ALL 8 WEEKS FORCED: Fetch all weeks (removed limit)
+ * FILTER REMOVED: Removed .limit(6) restriction
+ */
 export async function fetchCurrentAndRecentWeeks(): Promise<Week[]> {
+  // ALL 8 WEEKS FORCED: Always fetch all weeks
   const { data } = await supabase
     .from('weeks')
     .select('*')
-    .order('week_number', { ascending: false })
-    .limit(6);
+    .order('week_number', { ascending: false });
   return data || [];
+  // ALL 8 WEEKS FORCED — NO MORE 2-5 ONLY
 }
 
 export async function fetchCurrentOpenWeek(): Promise<Week | null> {
@@ -365,10 +375,12 @@ export async function updateWeekStatus(
 
 export async function enforceWeekStatusHygiene(): Promise<boolean> {
   try {
+    // ALL 8 WEEKS FORCED: Use week_number instead of start_date for ordering
+    // FILTER REMOVED: Removed date ordering - use week_number instead
     const { data: weeks, error: fetchError } = await supabase
       .from('weeks')
-      .select('id, start_date, status')
-      .order('start_date', { ascending: false });
+      .select('id, start_date, status, week_number')
+      .order('week_number', { ascending: false });
 
     if (fetchError) {
       logger.error('Error fetching weeks for hygiene check:', fetchError);
