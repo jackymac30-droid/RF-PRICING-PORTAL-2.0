@@ -98,11 +98,17 @@ export function VolumeAcceptance({ weekId }: VolumeAcceptanceProps) {
         throw error;
       }
       
+      // FIXED 400 ERROR: Filter client-side instead of invalid .or() syntax
+      // Filter to only quotes with offered_volume > 0 OR awarded_volume > 0
+      const filteredData = (data || []).filter((q: any) => 
+        (q.offered_volume && q.offered_volume > 0) || (q.awarded_volume && q.awarded_volume > 0)
+      );
+      
       // Log partial submission details for debugging
-      if (data && data.length > 0) {
-        const supplierIds = new Set(data.map((q: any) => q.supplier_id));
-        const itemIds = new Set(data.map((q: any) => q.item_id));
-        logger.debug(`VolumeAcceptance: ${data.length} quote(s) from ${supplierIds.size} supplier(s) for ${itemIds.size} SKU(s)`);
+      if (filteredData && filteredData.length > 0) {
+        const supplierIds = new Set(filteredData.map((q: any) => q.supplier_id));
+        const itemIds = new Set(filteredData.map((q: any) => q.item_id));
+        logger.debug(`VolumeAcceptance: ${filteredData.length} quote(s) from ${supplierIds.size} supplier(s) for ${itemIds.size} SKU(s)`);
       }
 
       const { data: pricingData, error: pricingError } = await supabase
