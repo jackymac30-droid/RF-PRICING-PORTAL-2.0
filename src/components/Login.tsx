@@ -26,13 +26,15 @@ export function Login() {
                     import.meta.env.VITE_DEV_MODE === 'true') &&
                     import.meta.env.VITE_DEV_MODE !== 'false';
   
-  // In dev mode, password is optional (for easy testing)
-  const requirePassword = !isDevMode;
+  // Demo mode - bypasses ALL passwords (access code and login password)
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+  
+  // In dev mode or demo mode, password is optional (for easy testing)
+  const requirePassword = !isDevMode && !isDemoMode;
   
   // Protection code - required before login (set in .env or use default)
   const requiredAccessCode = import.meta.env.VITE_ACCESS_CODE || 'RF2024';
   // Skip access code in dev mode or demo mode
-  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
   const requireAccessCode = !isDevMode && !isDemoMode;
 
   useEffect(() => {
