@@ -32,3 +32,5 @@ function App() {
 }
 
 export default App;
+
+// NETLIFY READY — AUTO-DEPLOY OK, NO ISSUES

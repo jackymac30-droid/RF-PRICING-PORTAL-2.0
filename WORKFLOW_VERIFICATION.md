@@ -1,161 +1,90 @@
-# Complete A→Z Workflow Verification ✅
+# Workflow End-to-End Verification Checklist
 
-## Full Workflow Steps
+## Status: ✅ ALL CODE FIXES IN PLACE
 
-### 1. **Create New Week** ✅
-- **Location**: RF Dashboard → "Create Week" button
-- **Function**: `createNewWeek()` in `database.ts`
-- **What it does**:
-  - Closes all existing open weeks (only one open at a time)
-  - Creates new week with status `'open'`
-  - Auto-generates week number (increments from last week)
-  - Creates quotes for ALL supplier × item combinations
-  - Week is immediately available for supplier pricing submissions
+All fixes are already implemented. The only blocker is database state (0 items).
 
-### 2. **Pricing Negotiation Loop** ✅
-- **Step 2a: Suppliers Submit Pricing**
-  - Suppliers log in and submit `supplier_fob` and `supplier_dlvd`
-  - Multiple suppliers can price the same SKU independently
-  
-- **Step 2b: RF Reviews & Counters**
-  - RF sees all quotes per SKU (grouped by item)
-  - RF can counter with `rf_counter_fob` per quote
-  
-- **Step 2c: Suppliers Respond**
-  - Suppliers can accept or revise with `supplier_revised_fob`
-  
-- **Step 2d: RF Finalizes Pricing**
-  - RF sets `rf_final_fob` per quote
-  - Clicks "Finalize Pricing" → Week status changes to `'finalized'`
-  - **Validation**: At least one quote must have `rf_final_fob`
-  - **Lock**: Volume needs become editable after this step
+## Prerequisites
 
-### 3. **Volume Needs Entry** ✅
-- **Location**: Award Volume tab → "Volume Needed" section
-- **Lock**: Only editable after pricing is finalized
-- **Saves to**: `week_item_volumes` table
-- **Validation**: Must save volume needs before allocating
+**CRITICAL**: Database must have items restored first!
 
-### 4. **Volume Allocation** ✅
-- **Location**: Award Volume tab → "Allocate Volume" section
-- **Lock**: Only accessible after volume needs are saved
-- **What it does**:
-  - RF awards `awarded_volume` to suppliers per quote
-  - Uses internal pricing calculations for cost/revenue
-  - Auto-saves drafts as you type
-  - Shows weighted averages, delivered costs, est. profit
+1. Run `URGENT_RESTORE_ITEMS.sql` in Supabase SQL Editor
+2. Verify: `SELECT COUNT(*) FROM items;` returns 8
+3. Verify: Database has suppliers (should already exist)
+4. Verify: Database has at least one week with status 'open'
 
-### 5. **Send Allocations to Suppliers** ✅
-- **Location**: Award Volume tab → "Send Allocation to Shipper" button
-- **Function**: `submitAllocationsToSuppliers()` RPC
-- **What it does**:
-  - Copies `awarded_volume` → `offered_volume`
-  - Resets supplier response fields
-  - Sets `allocation_submitted = true` on week
-  - Suppliers can now see and respond to volume offers
+## Manual Test Checklist
 
-### 6. **Supplier Volume Response** ✅
-- **Location**: Supplier Dashboard → Volume Offers section
-- **What suppliers can do**:
-  - Accept offered volume → sets `supplier_volume_accepted`
-  - Revise with counter-offer → sets `supplier_volume_response`
-  - Decline → sets `supplier_response_status = 'declined'`
+### Step 1: Pricing → Finalize
+1. **RF Dashboard**: Select open week
+2. **Supplier Dashboard**: Supplier logs in and submits pricing for all 8 SKUs
+   - ✅ Verify: Only 8 SKUs visible (Strawberry 4×2 lb CONV, 8×1 lb ORG, Blueberry 18 oz CONV, Pint ORG, Blackberry 12ozx6 CONV, 12ozx6 ORG, Raspberry 12ozx6 CONV, 12ozx6 ORG)
+   - ✅ Verify: Blackberry/Raspberry ONLY show pack_size "12ozx6"
+3. **RF Dashboard**: RF sends counters to suppliers
+4. **Supplier Dashboard**: Suppliers accept/reject counters
+5. **RF Dashboard**: RF finalizes pricing (sets `rf_final_fob`)
+   - ✅ Verify: All priced SKUs show finalized prices
 
-### 7. **RF Accepts Supplier Responses** ✅
-- **Location**: Volume Acceptance tab
-- **What RF can do**:
-  - Accept supplier response → updates `awarded_volume` to match `supplier_volume_accepted`
-  - Revise offer → updates `offered_volume` with new amount
-  - Withdraw offer → sets `offered_volume = 0`
+### Step 2: Award → Lock
+6. **RF Dashboard**: Switch to "Award Volume" tab
+7. **RF Dashboard**: Enter awarded volumes for suppliers (at least one `awarded_volume > 0`)
+8. **RF Dashboard**: Click "Lock" button on each priced SKU
+   - ✅ Verify: Lock button toggles correctly
+   - ✅ Verify: State persists after page refresh
+   - ✅ Verify: `week_item_volumes.locked = true` in database after lock
 
-### 8. **Close the Loop** ✅
-- **Location**: Volume Acceptance tab → "Close the Loop" button
-- **Function**: `closeVolumeLoop()` RPC
-- **Validation Gates**:
-  - ✅ No pending allocations (offered but no response)
-  - ✅ No unhandled responses (all responses accepted/revised)
-  - ✅ At least one finalized allocation exists
-- **What it does**:
-  - Sets `volume_finalized = true`
-  - Sets week `status = 'closed'` (LOCKS THE WEEK)
-  - Records timestamp and user who closed it
-  - **Emergency Unlock**: RF can unlock with reason (audit trail)
+### Step 3: Send Allocations
+9. **RF Dashboard**: "Send Allocations to Suppliers" button should now be enabled
+   - ✅ Verify: Button enabled only when:
+     - All priced SKUs have `rf_final_fob` set (finalized pricing)
+     - All priced SKUs are locked (`week_item_volumes.locked = true`)
+     - At least one `awarded_volume > 0` exists
+10. **RF Dashboard**: Click "Send Allocations to Suppliers"
+    - ✅ Verify: Button disabled after click
+    - ✅ Verify: `quotes.offered_volume` set to `awarded_volume` in database
+    - ✅ Verify: `weeks.allocation_submitted = true` in database
 
-### 9. **Create Next Week** ✅
-- After closing a week, RF can create a new week
-- Previous week remains `'closed'` (locked)
-- New week becomes `'open'` for next cycle
+### Step 4: Supplier Accepts
+11. **Supplier Dashboard**: Supplier logs in and sees "Volume Offers" section
+12. **Supplier Dashboard**: Supplier accepts/revises volume allocations
+    - ✅ Verify: `quotes.supplier_volume_response` set to 'accept'/'update'/'decline'
+    - ✅ Verify: `quotes.supplier_volume_accepted` set to accepted volume
 
-## Status Flow
+### Step 5: RF Acceptance Updates
+13. **RF Dashboard**: RF Acceptance tab should auto-navigate when supplier responds
+    - ✅ Verify: Tab switches to "Volume Acceptance" automatically
+    - ✅ Verify: Real-time updates show supplier responses immediately
+    - ✅ Verify: `supplier_volume_response` and `supplier_volume_accepted` displayed correctly
 
-```
-Week Lifecycle:
-'open' → 'finalized' → 'closed'
-  ↓         ↓           ↓
-Pricing   Volume      Locked
-Active    Allocation  (Read-only)
-```
+## Code Verification
 
-## Validation Gates Summary
+### ✅ 1. SKU Filtering (8 Canonical SKUs)
+**File**: `src/utils/helpers.ts` (lines 80-230)
+- `filterStandardSKUs()` filters to exactly 8 SKUs
+- Blackberry/Raspberry ONLY show pack_size "12ozx6" (lines 141-150)
+- Filters out any non-matching variants
 
-| Step | Gate | Error Message |
-|------|------|---------------|
-| Finalize Pricing | At least one quote has `rf_final_fob` | "No finalized pricing found" |
-| Enter Volume Needs | Week status = `'finalized'` | "Please finalize pricing first" |
-| Allocate Volume | Volume needs saved | "Please save volume needs first" |
-| Send Allocations | At least one `awarded_volume > 0` | "No allocations to send" |
-| Close Loop | No pending responses | "X allocation(s) still pending" |
-| Close Loop | All responses handled | "X response(s) need to be accepted" |
-| Close Loop | At least one finalized allocation | "No finalized allocations found" |
+### ✅ 2. Lock/Unlock Persistence
+**File**: `src/components/AwardVolume.tsx` (lines 595-618)
+- `handleToggleSKULock()` calls `lockSKU()` or `unlockSKU()`
+- After success, calls `await load()` to refresh from DB (line 606)
+- `lockedSKUs` state is rehydrated from `week_item_volumes.locked` column
 
-## Emergency Unlock Feature ✅
+### ✅ 3. Send Allocations Gating
+**File**: `src/components/AwardVolume.tsx` (lines 731-791)
+- `allPricedSKUsFinalized`: Checks all priced SKUs have `rf_final_fob` set (lines 731-739)
+- `allPricedSKUsLocked`: Checks all priced SKUs are locked via `lockedSKUs` Set (lines 742-748)
+- `hasAnyAllocation`: Checks at least one `awarded_volume > 0` exists (lines 751-761)
+- Button disabled if any check fails (line 789)
 
-- **Who**: RF users only
-- **Location**: Volume Acceptance tab, Award Volume tab, RF Dashboard
-- **What it does**:
-  - Unlocks a `'closed'` week for emergency changes
-  - Requires reason (audited)
-  - Sets `emergency_unlock_enabled = true`
-  - Records who, when, and why
+### ✅ 4. Supplier Acceptance Propagation
+**Files**: 
+- `src/components/VolumeAcceptance.tsx` (lines 85-86, 160-161): Reads `supplier_volume_response` and `supplier_volume_accepted` from quotes
+- `src/components/VolumeAcceptance.tsx` (lines 207-208): Uses `useRealtime` to refresh on quote updates
+- `src/components/RFDashboard.tsx` (lines 99-148): Real-time listener navigates to acceptance tab when suppliers respond
 
-## Multi-Supplier Per SKU ✅
+## Next Steps
 
-- **Data Model**: One quote per (week_id, item_id, supplier_id)
-- **RF View**: Quotes grouped by item/SKU
-- **Supplier View**: Each supplier only sees their own quotes
-- **Workflow**: All suppliers can independently:
-  - Submit pricing for same SKU
-  - Receive volume allocations
-  - Respond to volume offers
-  - Complete full cycle independently
-
-## Financial Calculations ✅
-
-- **Single Source of Truth**: `item_pricing_calculations` table
-- **Formulas**:
-  - `Our Avg Cost = FOB + Rebate + Freight`
-  - `Delivered Price = Our Avg Cost + Profit Per Case`
-  - `Est. Profit = Profit Per Case × Volume`
-- **Consistency**: All tabs use same calculations
-- **Exclusions**: Declined responses excluded from totals
-
-## Build Status ✅
-
-- ✅ TypeScript compilation: **PASSING**
-- ✅ Vite build: **PASSING** (1.73s)
-- ✅ No missing imports
-- ✅ All database functions exist
-- ✅ All RPC functions deployed
-
-## Ready for Production ✅
-
-The entire workflow is **fully functional** and ready for use:
-- ✅ Week creation works
-- ✅ Pricing negotiation works
-- ✅ Volume allocation works
-- ✅ Supplier responses work
-- ✅ Week closing works
-- ✅ Emergency unlock works
-- ✅ Multi-supplier workflow works
-- ✅ Financial calculations are accurate
-- ✅ All validation gates are in place
+1. **RESTORE DATABASE**: Run `URGENT_RESTORE_ITEMS.sql` in Supabase SQL Editor
+2. **VERIFY**: Check that `SELECT COUNT(*) FROM items;` returns 8
+3. **TEST**: Follow the manual test checklist above

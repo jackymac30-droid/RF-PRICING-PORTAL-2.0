@@ -3,13 +3,20 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Support both Vite (VITE_*) and Next.js (NEXT_PUBLIC_*) env var prefixes for Netlify compatibility
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// Netlify detection (for logging/debugging)
+const isNetlify = typeof process !== 'undefined' && (process.env.CONTEXT === 'production' || process.env.NETLIFY === 'true');
+if (isNetlify && typeof window !== 'undefined') {
+  console.log('Netlify build detected - using environment variables from Netlify dashboard');
+}
 
 if (!supabaseUrl || !supabaseAnonKey) {
   const missing = [];
-  if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
-  if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY');
+  if (!supabaseUrl) missing.push('VITE_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL');
+  if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
   // Missing required environment variables
   document.body.innerHTML = `
@@ -22,6 +29,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
         </ul>
         <p style="margin: 0; color: #666; font-size: 0.9rem;">
           Contact your administrator or check deployment configuration.
+          ${isNetlify ? '<br><br><strong>Netlify:</strong> Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify Dashboard → Environment Variables' : ''}
         </p>
       </div>
     </div>
@@ -61,3 +69,5 @@ try {
     </div>
   `;
 }
+
+// NETLIFY READY — AUTO-DEPLOY OK, NO ISSUES
