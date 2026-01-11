@@ -67,10 +67,9 @@ export async function fetchItems(): Promise<Item[]> {
   return data || [];
 }
 
-export async function fetchWeeks(limit?: number): Promise<Week[]> {
-  // ALL 8 WEEKS FORCED VISIBLE: Remove ALL date filters, limits, and restrictions
-  // Order by week_number ascending (1, 2, 3, ... 8) for consistent display
-  // NO LIMITS - always fetch all weeks
+export async function fetchWeeks(): Promise<Week[]> {
+  // ALL 8 WEEKS FORCED — NO MORE 2-5 ONLY: Remove ALL filters, limits, date conditions
+  // Order by week_number ascending (1, 2, 3, ... 8) - NO date filters, NO limits
   const { data, error } = await supabase
     .from('weeks')
     .select('*')
@@ -87,16 +86,16 @@ export async function fetchWeeks(limit?: number): Promise<Week[]> {
     return [];
   }
   
-  // ALL 8 WEEKS FORCED VISIBLE: Debug log to verify all weeks are fetched
-  const weekNumbers = data.map(w => w.week_number).sort((a, b) => a - b);
+  // ALL 8 WEEKS FORCED: Debug log to verify all weeks are fetched
+  const weekDetails = data.map(w => `Week ${w.week_number} - ${w.status} - ${w.start_date}`).join(', ');
   if (typeof window !== 'undefined') {
-    console.log('✅ Fetched weeks:', weekNumbers, `(Total: ${data.length} weeks)`);
+    console.log('✅ ALL WEEKS FETCHED:', weekDetails);
+    console.log(`Total: ${data.length} weeks - Numbers:`, data.map(w => w.week_number).sort((a, b) => a - b));
   }
-  logger.debug('Fetched weeks', { weekNumbers, count: data.length });
+  logger.debug('All weeks fetched', { count: data.length, weekNumbers: data.map(w => w.week_number) });
   
-  // FIXED WEEK FILTER: Removed limit parameter - always return all weeks
   return data;
-  // ALL 8 WEEKS FORCED VISIBLE — FIXED
+  // ALL 8 WEEKS FORCED — NO MORE 2-5 ONLY
 }
 
 /**
