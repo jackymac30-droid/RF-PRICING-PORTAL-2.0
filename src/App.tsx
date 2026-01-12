@@ -11,7 +11,7 @@ function AppContent() {
   // WORLD FIX: Always check session first, default to Login - opens on login/home page
   if (!session) {
     if (typeof window !== 'undefined') {
-      console.log('✅ DEMO FIXED — App opened on home/login page ✓');
+      console.log('✅ FINAL FIX — App opened on home/login page ✓');
     }
     return <Login />;
   }
