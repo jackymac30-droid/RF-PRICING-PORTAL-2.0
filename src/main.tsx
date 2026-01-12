@@ -50,13 +50,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 
   try {
-    // FIXED FOR COLLEGE DEMO: Clear persisted session on app start so app opens on login page
-    // This ensures fresh login every time for demo/testing
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('rf_pricing_session');
-      sessionStorage.removeItem('app_access_granted');
-      console.log('✅ Session cleared - app will open on login page');
-    }
+    // BOARD DEMO: Don't clear session - let login work normally
+    // User can still logout manually if needed
+    // Session persistence is important for workflow continuity
     
     createRoot(rootElement).render(
       <StrictMode>
