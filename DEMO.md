@@ -16,8 +16,16 @@ VITE_SUPABASE_URL=your-supabase-url
 - Go to: Supabase Dashboard → Settings → API
 - Copy the `service_role` key (the SECRET one, not anon key)
 
-### 2. Run Seed Script
+### 2. Run Seed Script (EASIEST: Use demo-magic-button.ts)
 
+**Option A - EASIEST (recommended):**
+```bash
+# Open demo-magic-button.ts, paste your SERVICE_ROLE_KEY and SUPABASE_URL
+# Then run:
+npx tsx demo-magic-button.ts
+```
+
+**Option B - Alternative:**
 ```bash
 npx tsx scripts/seed-demo-complete.ts
 ```

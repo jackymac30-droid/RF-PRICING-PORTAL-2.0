@@ -38,5 +38,5 @@ function App() {
 
 export default App;
 
-// SIMPLE WORKFLOW READY — COLLEGE DEMO PERFECT
-// FIXED FOR COLLEGE DEMO: Opens on login/home, defaults to week 8, all 8 weeks visible
+// BOARD-SPOON-FEED DEMO READY — SIMPLE AS CHILD
+// FIXED FOR BOARD SPOON-FEED: Opens on login/home, defaults to week 8, all 8 weeks visible

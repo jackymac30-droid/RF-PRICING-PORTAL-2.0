@@ -94,7 +94,7 @@ export async function fetchWeeks(): Promise<Week[]> {
   logger.debug('All weeks fetched', { count: data.length, weekNumbers });
   
   return data;
-  // SIMPLE WORKFLOW READY — COLLEGE DEMO PERFECT
+  // BOARD-SPOON-FEED DEMO READY — SIMPLE AS CHILD
 }
 
 /**
