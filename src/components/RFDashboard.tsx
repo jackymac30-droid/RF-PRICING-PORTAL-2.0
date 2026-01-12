@@ -311,6 +311,20 @@ export function RFDashboard() {
       
       if (weekToSelect) {
         setSelectedWeek(weekToSelect);
+        // CRITICAL FIX: Load quotes immediately after setting week
+        // This ensures pricing view has data even when no supplier is selected
+        try {
+          const quotesData = await fetchQuotesWithDetails(weekToSelect.id);
+          setQuotes(quotesData);
+          logger.debug('Loaded quotes for default week', { 
+            weekId: weekToSelect.id,
+            weekNumber: weekToSelect.week_number,
+            quoteCount: quotesData.length 
+          });
+        } catch (err) {
+          logger.error('Error loading quotes for default week:', err);
+          // Don't show toast here - let the component handle it
+        }
         // Check if this week has allocations submitted and supplier responses - auto-navigate to acceptance tab
         if (weekToSelect.allocation_submitted) {
           // FIXED 400 ERROR: Use separate queries instead of invalid .or() syntax
@@ -346,16 +360,34 @@ export function RFDashboard() {
       setLoading(false);
     }
   }, []);
-  const loadQuotes = useCallback(async () => {
-    if (!selectedWeek || !selectedSupplier) return;
-    try {
+  const loadQuotes = useCallback(async () => {
+    if (!selectedWeek || !selectedSupplier) return;
+    try {
       const quotesData = await fetchQuotesWithDetails(selectedWeek.id, selectedSupplier.id);
-      setQuotes(quotesData);
-    } catch (err) {
-      logger.error('Error loading quotes:', err);
-      showToast('Failed to load quotes. Please try again.', 'error');
-    }
-  }, [selectedWeek, selectedSupplier]);
+      setQuotes(quotesData);
+    } catch (err) {
+      logger.error('Error loading quotes:', err);
+      showToast('Failed to load quotes. Please try again.', 'error');
+    }
+  }, [selectedWeek, selectedSupplier]);
+
+  // CRITICAL FIX: Load all quotes for selected week (for pricing overview when no supplier selected)
+  const loadAllQuotesForWeek = useCallback(async () => {
+    if (!selectedWeek) return;
+    try {
+      // Fetch quotes for all suppliers for this week (no supplier filter)
+      const quotesData = await fetchQuotesWithDetails(selectedWeek.id);
+      setQuotes(quotesData);
+      logger.debug('Loaded all quotes for week', { 
+        weekId: selectedWeek.id, 
+        weekNumber: selectedWeek.week_number,
+        quoteCount: quotesData.length 
+      });
+    } catch (err) {
+      logger.error('Error loading all quotes for week:', err);
+      showToast('Failed to load quotes. Please try again.', 'error');
+    }
+  }, [selectedWeek, showToast]);
   // Set up realtime subscriptions after functions are defined
   const handleRealtimeQuotes = useCallback(() => {
     if (selectedWeek) {
@@ -371,12 +403,18 @@ export function RFDashboard() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-  useEffect(() => {
-    if (selectedWeek) {
-      loadWeekData();
-      loadVolumeNeeds();
-    }
-  }, [selectedWeek, loadWeekData]);
+  useEffect(() => {
+    if (selectedWeek) {
+      loadWeekData();
+      loadVolumeNeeds();
+      // CRITICAL FIX: Load quotes when week changes (even if no supplier selected)
+      if (!selectedSupplier) {
+        loadAllQuotesForWeek();
+      } else {
+        loadQuotes();
+      }
+    }
+  }, [selectedWeek, selectedSupplier, loadWeekData, loadVolumeNeeds, loadAllQuotesForWeek, loadQuotes]);
   async function loadVolumeNeeds() {
     if (!selectedWeek) return;
     try {
