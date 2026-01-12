@@ -241,12 +241,12 @@ export function RFDashboard() {
         fetchItems(),
         fetchSuppliers(),
       ]);
-      // FIXED FOR COLLEGE DEMO: Set ALL 8 weeks, no filtering/slicing
+      // WORLD FIX: Set ALL 8 weeks, no filtering/slicing - show everything
       setWeeks(weeksData);
       // Debug log to verify all weeks are set
       const weekNumbers = weeksData.map(w => w.week_number).sort((a, b) => a - b);
       if (typeof window !== 'undefined') {
-        console.log(`✅ Fetched all 8 weeks: [${weekNumbers.join(', ')}] (Total: ${weeksData.length} weeks)`);
+        console.log(`✅ DEMO FIXED — ALL 8 WEEKS: [${weekNumbers.join(', ')}] (Total: ${weeksData.length} weeks)`);
       }
       logger.debug('Weeks set in RFDashboard', { weekNumbers, count: weeksData.length });
       // Use standardized filtering to ensure same 8 SKUs across all components

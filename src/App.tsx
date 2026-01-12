@@ -8,11 +8,10 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 function AppContent() {
   const { session } = useApp();
 
-  // SIMPLE WORKFLOW READY: Always check session first, default to Login
+  // WORLD FIX: Always check session first, default to Login - opens on login/home page
   if (!session) {
-    // FIXED FOR COLLEGE DEMO: App opens on login/home page first
     if (typeof window !== 'undefined') {
-      console.log('✅ App opened on home/login page ✓');
+      console.log('✅ DEMO FIXED — App opened on home/login page ✓');
     }
     return <Login />;
   }
