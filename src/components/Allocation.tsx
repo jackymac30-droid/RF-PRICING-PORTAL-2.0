@@ -425,7 +425,8 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
   // Projection 1: Total Margin (current + projected if gap exists)
   const currentTotalMargin = sku.totalSKUMargin;
   const projectedMarginFromGap = gap > 0 ? (highestProfitEntry?.marginPerCase || 0) * gap : 0;
-  const projectedTotalMargin = currentTotalMargin + projectedMarginFromGap;
+  // projectedTotalMargin unused but kept for future use
+  // const projectedTotalMargin = currentTotalMargin + projectedMarginFromGap;
   
   // Projection 2: Average cost if gap allocated to cheapest
   const projectedAvgCost = gap > 0 && cheapestEntry ? 
