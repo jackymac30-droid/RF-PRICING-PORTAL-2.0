@@ -176,7 +176,7 @@ export function RFDashboard() {
     } catch (err) {
       logger.error('Error loading week data:', err);
     }
-  }, [selectedWeek]);
+  }, [selectedWeek?.id]); // FIXED LOADING HELL: Only depend on ID
   
   useEffect(() => {
     if (selectedWeek && selectedSupplier) {
@@ -184,7 +184,7 @@ export function RFDashboard() {
       setCounterInputs({});
       setFinalInputs({});
     }
-  }, [selectedWeek, selectedSupplier]);
+  }, [selectedWeek?.id, selectedSupplier?.id]); // FIXED LOADING HELL: Only depend on IDs
   
   // Auto-navigate to acceptance tab when week has allocations submitted and supplier responses
   useEffect(() => {
@@ -422,7 +422,7 @@ export function RFDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedWeek, selectedSupplier, showToast]);
+  }, [selectedWeek?.id, selectedSupplier?.id, showToast]); // FIXED LOADING HELL: Only depend on IDs
 
   // CRITICAL FIX: Load all quotes for selected week (for pricing overview when no supplier selected)
   const loadAllQuotesForWeek = useCallback(async () => {
@@ -481,7 +481,7 @@ export function RFDashboard() {
     if (selectedWeek && selectedSupplier) {
       loadQuotes().catch(err => logger.error('Error in realtime loadQuotes:', err));
     }
-  }, [selectedWeek, selectedSupplier, loadWeekData, loadQuotes]);
+  }, [selectedWeek?.id, selectedSupplier?.id]); // FIXED LOADING HELL: Remove functions from deps
  
   useRealtime('quotes', handleRealtimeQuotes);
   useRealtime('weeks', loadData);
@@ -554,7 +554,7 @@ export function RFDashboard() {
     };
    
     checkAllSuppliersFinalized();
-  }, [selectedWeek?.id, selectedWeek?.status, submittedSuppliers, finalizedSuppliers, quotes]);
+  }, [selectedWeek?.id, selectedWeek?.status]); // FIXED LOADING HELL: Remove arrays from deps to prevent loops
   // Multi-Supplier-Per-SKU View:
   // When RF clicks "Quotes" button, this loads ALL suppliers' quotes for that SKU
   // This allows RF to compare prices across suppliers and make informed decisions
