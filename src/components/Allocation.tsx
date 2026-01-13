@@ -184,7 +184,7 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
           
           if (itemHistoricalQuotes.length > 0) {
             // Calculate average historical price
-            const historicalPrices = itemHistoricalQuotes.map(q => q.rf_final_fob!);
+            const historicalPrices = itemHistoricalQuotes.map(q => q.rf_final_fob ?? 0).filter(p => p > 0); // FINAL WORKFLOW FIX: Handle undefined
             const avgHistoricalPrice = historicalPrices.reduce((sum, p) => sum + p, 0) / historicalPrices.length;
             
             // Calculate price volatility (standard deviation)
