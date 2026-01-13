@@ -31,7 +31,7 @@ if (!rootElement) {
   throw new Error('Root element not found');
 }
 
-// WORLD-DEPENDS-ON-IT FIX: Always mount React - App will show error if env vars missing
+// FIX LOCALHOST: Always mount React - App will handle errors gracefully
 try {
   createRoot(rootElement).render(
     <StrictMode>

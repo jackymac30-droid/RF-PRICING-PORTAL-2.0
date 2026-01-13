@@ -327,7 +327,8 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
 
     // Find largest deviation
     let maxDev = 0;
-    let devSupplier = '';
+    // devSupplier unused but kept for future use
+    // let devSupplier = '';
     historicalShares.forEach(hist => {
       const current = currentShares.get(hist.supplierId) || 0;
       const dev = Math.abs(current - hist.sharePercent);

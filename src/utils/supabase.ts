@@ -40,8 +40,13 @@ if (!finalSupabaseUrl || !finalSupabaseAnonKey) {
   }
 }
 
-// Create client with empty strings if missing (main.tsx will prevent app from loading)
-export const supabase = createClient(finalSupabaseUrl || 'https://placeholder.supabase.co', finalSupabaseAnonKey || 'placeholder-key', {
+// FIX LOCALHOST: Create client with placeholder values if missing - don't crash the app
+// On localhost, allow app to load even without real Supabase credentials
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const safeUrl = finalSupabaseUrl || (isLocalhost ? 'https://placeholder.supabase.co' : '');
+const safeKey = finalSupabaseAnonKey || (isLocalhost ? 'placeholder-key' : '');
+
+export const supabase = createClient(safeUrl, safeKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
