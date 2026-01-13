@@ -49,11 +49,12 @@ export function RFDashboard() {
   const [quotes, setQuotes] = useState<QuoteWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false); // FIXED LOADING HELL: Prevent multiple loads
   
   // FIXED LOADING HELL: Add timeout to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (loading) {
+      if (loading && !hasLoadedOnce) {
         console.error('❌ FIXED LOADING HELL: Loading timeout - dashboard stuck loading');
         setLoadingError('Loading failed — check console. If this persists, refresh the page.');
         setLoading(false);
@@ -61,7 +62,7 @@ export function RFDashboard() {
     }, 10000); // 10 second timeout
     
     return () => clearTimeout(timeout);
-  }, [loading]);
+  }, [loading, hasLoadedOnce]);
   const [submittedSuppliers, setSubmittedSuppliers] = useState<Supplier[]>([]);
   const [notSubmittedSuppliers, setNotSubmittedSuppliers] = useState<Supplier[]>([]);
   const [counterSuppliers, setCounterSuppliers] = useState<Supplier[]>([]);
