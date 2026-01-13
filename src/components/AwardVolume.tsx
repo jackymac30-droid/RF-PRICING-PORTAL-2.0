@@ -914,10 +914,10 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
             return s + (finalPrice * x.awarded)
           }, 0)
           const weightedAvgFOB = totalAwarded > 0 ? totalCost / totalAwarded : 0
-          // FIX AWARD VOLUME: DLVD = FOB + freight - rebate (internal calculator updates real-time)
-          // Formula: DLVD = Weighted Avg FOB + Freight - Rebate
+          // FIX AWARD VOLUME: DLVD = FOB + freight - rebate + margin (internal calculator updates real-time)
+          // Formula: DLVD = Weighted Avg FOB + Freight - Rebate + Margin
           // Calculator updates in real-time via setCalc onChange handlers - React re-renders automatically
-          const dlvd = weightedAvgFOB > 0 ? weightedAvgFOB + calc.freight - calc.rebate : 0
+          const dlvd = weightedAvgFOB > 0 ? weightedAvgFOB + calc.freight - calc.rebate + calc.margin : 0
 
           const prices = rows.map(x => x.price).filter(p => p > 0)
           const awardedBySupplier = rows
@@ -1129,7 +1129,7 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
                           <div className="mt-3 p-3 rounded-lg border border-emerald-400/20 bg-emerald-500/10">
                             <div className="text-xs text-white/70 font-semibold">DLVD (not editable)</div>
                             <div className="text-2xl font-black text-emerald-200 mt-1">{dlvd > 0 ? formatCurrency(dlvd) : '-'}</div>
-                            <div className="text-xs text-white/50 mt-1">DLVD = Weighted FOB + Freight − Rebate</div>
+                            <div className="text-xs text-white/50 mt-1">DLVD = Weighted FOB + Freight − Rebate + Margin</div>
                           </div>
                         </div>
 
