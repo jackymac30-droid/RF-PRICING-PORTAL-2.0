@@ -241,7 +241,7 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
                 // Track supplier prices and wins
                 weekQuotes.forEach(q => {
                   const supplierId = q.supplier_id;
-                  const price = q.rf_final_fob!;
+                  const price = q.rf_final_fob ?? 0; // FINAL WORKFLOW FIX: Handle undefined
                   
                   if (!supplierMap.has(supplierId)) {
                     supplierMap.set(supplierId, { prices: [], wins: 0 });
