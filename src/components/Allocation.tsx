@@ -413,7 +413,6 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
           }
         }
       }
-      }
     }
   }
 
