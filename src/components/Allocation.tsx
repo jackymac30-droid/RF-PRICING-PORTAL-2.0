@@ -197,7 +197,7 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
               const weekQuotes = historicalQuotes[weekIdx]
                 .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob > 0);
               if (weekQuotes.length > 0) {
-                const weekAvg = weekQuotes.reduce((sum, q) => sum + (q.rf_final_fob || 0), 0) / weekQuotes.length;
+                const weekAvg = weekQuotes.reduce((sum, q) => sum + (q.rf_final_fob ?? 0), 0) / weekQuotes.length; // FINAL WORKFLOW FIX: Handle undefined
                 weeklyTrends.push({ week: week.week_number, avgPrice: weekAvg });
               }
             });
@@ -235,7 +235,7 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
                 .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob > 0);
               
               if (weekQuotes.length > 0) {
-                const weekAvg = weekQuotes.reduce((sum, q) => sum + (q.rf_final_fob || 0), 0) / weekQuotes.length;
+                const weekAvg = weekQuotes.reduce((sum, q) => sum + (q.rf_final_fob ?? 0), 0) / weekQuotes.length; // FINAL WORKFLOW FIX: Handle undefined
                 weekAverages.push(weekAvg);
                 
                 // Track supplier prices and wins
@@ -747,8 +747,8 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
         for (const quote of itemQuotes) {
           // FINAL WORKFLOW FIX: Show finalized FOB (rf_final_fob) when available, otherwise estimated FOB (supplier_fob)
           // Allocation tab shows finalized FOB for 8/9 shippers (Berry Farms missing/open shows no pricing)
-          const isFinalized = quote.rf_final_fob !== null && quote.rf_final_fob > 0;
-          const price = isFinalized ? quote.rf_final_fob! : (quote.supplier_fob || 0);
+          const isFinalized = quote.rf_final_fob !== null && quote.rf_final_fob !== undefined && quote.rf_final_fob > 0;
+          const price = isFinalized ? (quote.rf_final_fob ?? 0) : (quote.supplier_fob ?? 0);
           
           // Calculate profit scenario metrics
           // Delivered Cost (without margin) for calculation
@@ -821,13 +821,20 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
         // Total SKU Margin (sum of all shipper margins)
         const totalSKUMargin = updatedEntries.reduce((sum, e) => sum + e.totalMargin, 0);
 
-        // Get locked state from volumeNeedsData (loaded from week_item_volumes table)
+        // FINAL WORKFLOW FIX: Get locked state from volumeNeedsData (loaded from week_item_volumes table)
         const volumeNeed = volumeNeedsData.find(vn => vn.item_id === item.id);
-        // Handle locked state - check for boolean, number (1/0), or string ('true'/'false')
+        // FINAL WORKFLOW FIX: Handle locked state - check for boolean, number (1/0), or string ('true'/'false')
         let isLocked = false;
         if (volumeNeed && 'locked' in volumeNeed) {
           const lockedValue = volumeNeed.locked;
-          isLocked = lockedValue === true || lockedValue === 1 || lockedValue === 'true' || lockedValue === '1';
+          // Type-safe check: handle boolean, number, or string
+          if (typeof lockedValue === 'boolean') {
+            isLocked = lockedValue;
+          } else if (typeof lockedValue === 'number') {
+            isLocked = lockedValue === 1;
+          } else if (typeof lockedValue === 'string') {
+            isLocked = lockedValue === 'true' || lockedValue === '1';
+          }
         }
 
         allocations.push({
@@ -1382,7 +1389,7 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
         });
 
         if (!result.isAchievable && result.reason) {
-          showToast(result.reason, 'warning');
+          showToast(result.reason, 'error'); // FINAL WORKFLOW FIX: Changed 'warning' to 'error' (ToastContext only supports 'success' | 'error')
         }
 
         // Apply allocations
