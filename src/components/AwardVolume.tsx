@@ -890,17 +890,15 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
             itemId && hasPricing ? (requiredByItem.get(itemId) ?? volumeNeeds.get(itemId) ?? 0) : 0
           const calc = itemId ? calcByItem.get(itemId) || { ...DEFAULT_CALC } : { ...DEFAULT_CALC }
 
-          // Calculate rows once - memoize to prevent recalculation glitches
+          // FIX AWARD VOLUME: Calculate rows with finalized pricing (rf_final_fob) from 8 shippers
+          // All quotes in pricedQuotes already have finalized pricing (filtered in pricedQuotesByItem)
           const rows = hasPricing
             ? r.pricedQuotes.map(q => {
-                // FIXED WORKFLOW: Use finalized price if available, otherwise use estimated (supplier_fob)
-                // This enables plug-and-play: shows estimated when supplier submits, updates to finalized when pricing finalizes
-                const price = (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)
-                  ? safeNum(q.rf_final_fob, 0)
-                  : safeNum(q.supplier_fob, 0)
+                // FIX AWARD VOLUME: Use finalized price (rf_final_fob) - all quotes here have it
+                const price = safeNum(q.rf_final_fob, 0) // Always finalized in pricedQuotes
                 const awarded = safeNum(awardedByQuote.get(q.id), 0)
                 const supplier = q.supplier?.name || 'Unknown'
-                const isFinalPrice = q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0
+                const isFinalPrice = true // All quotes in pricedQuotes have finalized pricing
                 return { q, supplier, price, awarded, rowCost: price * awarded, isFinalPrice }
               })
             : []
@@ -917,8 +915,9 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
           }, 0)
           const weightedAvgFOB = totalAwarded > 0 ? totalCost / totalAwarded : 0
           // FIX AWARD VOLUME: DLVD = FOB + freight - rebate (internal calculator updates real-time)
-          // Formula: DLVD = Weighted Avg FOB + Freight - Rebate + Margin
-          const dlvd = weightedAvgFOB > 0 ? weightedAvgFOB + calc.freight - calc.rebate + calc.margin : 0
+          // Formula: DLVD = Weighted Avg FOB + Freight - Rebate
+          // Calculator updates in real-time via setCalc onChange handlers - React re-renders automatically
+          const dlvd = weightedAvgFOB > 0 ? weightedAvgFOB + calc.freight - calc.rebate : 0
 
           const prices = rows.map(x => x.price).filter(p => p > 0)
           const awardedBySupplier = rows
