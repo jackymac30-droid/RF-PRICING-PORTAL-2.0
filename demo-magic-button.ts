@@ -107,13 +107,17 @@ const ITEMS = [
   { name: 'Raspberry', pack_size: '12ozx6', category: 'berry', organic_flag: 'ORG', display_order: 8 },
 ];
 
-// FINAL WORLD FIX: 5 suppliers including Berry Farms
+// FIX SEEDING: 9 suppliers (Berry Farms as #9) - all 9 finalized weeks 1-7, week 8 only 8 suppliers (Berry Farms missing gap)
 const SUPPLIERS = [
-  { name: 'Berry Farms', email: 'contact@berryfarms.com' },
   { name: 'Fresh Farms Inc', email: 'supplier1@freshfarms.com' },
   { name: 'Organic Growers', email: 'supplier2@organicgrowers.com' },
   { name: 'Valley Fresh', email: 'supplier3@valleyfresh.com' },
   { name: 'Premium Produce', email: 'supplier4@premiumproduce.com' },
+  { name: 'Coastal Berries', email: 'supplier5@coastalberries.com' },
+  { name: 'Mountain Fresh', email: 'supplier6@mountainfresh.com' },
+  { name: 'Sunset Farms', email: 'supplier7@sunsetfarms.com' },
+  { name: 'Green Valley', email: 'supplier8@greenvalley.com' },
+  { name: 'Berry Farms', email: 'contact@berryfarms.com' }, // #9 - missing in week 8
 ];
 
 // ============================================================================
@@ -212,8 +216,8 @@ async function seedEverything() {
   }
   console.log(`  ✅ ${itemMap.size} items`);
 
-  // 2. Suppliers (5 suppliers including Berry Farms)
-  console.log('2. Suppliers (5 including Berry Farms)...');
+  // 2. Suppliers (9 suppliers - Berry Farms as #9)
+  console.log('2. Suppliers (9 suppliers - Berry Farms as #9)...');
   const supplierMap = new Map<string, string>();
   let supplierErrors = 0;
   for (const supplier of SUPPLIERS) {
@@ -238,7 +242,7 @@ async function seedEverything() {
     console.error(`  ⚠️  ${supplierErrors} supplier(s) had errors - check messages above`);
   }
   const hasBerryFarms = supplierMap.has('contact@berryfarms.com');
-  console.log(`  ✅ ${supplierMap.size} suppliers (Berry Farms: ${hasBerryFarms ? 'YES' : 'NO'})`);
+  console.log(`  ✅ ${supplierMap.size} suppliers (Berry Farms as #9: ${hasBerryFarms ? 'YES' : 'NO'})`);
 
   // 3. Weeks (8 weeks: 1-7 finalized, 8 open) - FINAL WORLD FIX
   console.log('3. Weeks (8 weeks: 1-7 finalized, 8 open)...');
@@ -319,8 +323,8 @@ async function seedEverything() {
       const basePrice = basePrices[item.name]?.[isORG ? 'org' : 'conv'] || 10.00;
       
       for (const [email, supplierId] of supplierMap.entries()) {
-        // THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo (not missing)
-        // Allow Berry Farms to submit pricing in week 8 for demo workflow
+        // FIX SEEDING: Week 8 - skip Berry Farms (intentional gap)
+        // Berry Farms will be skipped in week 8 to show workflow live: submit → finalize → award → lock → send → acceptance
         
         const supplierFOB = Math.max(5.00, Math.min(15.00, randomPrice(basePrice, 3.0)));
         
@@ -331,14 +335,14 @@ async function seedEverything() {
           supplier_fob: supplierFOB,
         };
         
-        // FINAL WORKFLOW FIX: Match exact process - weeks 1-7 all finalized, week 8 8/9 shippers finalized (Berry Farms missing/open)
+        // FIX SEEDING: Weeks 1-7 all 9 suppliers finalized, week 8 only 8 suppliers (Berry Farms missing gap)
         if (weekNum <= 7) {
-          // FINAL WORKFLOW FIX: Weeks 1-7 finalized - ALL 5 suppliers finalized (rf_final_fob set)
-          // Full workflow: quoted → countered → finalized for ALL suppliers
+          // FIX SEEDING: Weeks 1-7 finalized - ALL 9 suppliers finalized (rf_final_fob set)
+          // Full workflow: quoted → countered → finalized for ALL 9 suppliers
           const counterAdjustment = -0.30 + Math.random() * 0.60; // RF counters slightly lower
           quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
           
-          // FINAL WORKFLOW FIX: Ensure ALL suppliers are finalized (no declined for weeks 1-7)
+          // FIX SEEDING: Ensure ALL 9 suppliers are finalized (no declined for weeks 1-7)
           // Supplier accepts counter (all cases for finalized weeks)
           quoteData.supplier_response = 'accept';
           quoteData.rf_final_fob = quoteData.rf_counter_fob; // Final = counter when accepted
@@ -347,17 +351,23 @@ async function seedEverything() {
           quoteData.supplier_volume_response = 'accept'; // Supplier accepted volume
           quoteData.supplier_volume_accepted = quoteData.awarded_volume; // Accepted volume matches awarded
         } else if (weekNum === 8) {
-        // THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo (not missing)
-        // All suppliers including Berry Farms can submit pricing in week 8
-        const counterAdjustment = -0.30 + Math.random() * 0.60;
-        quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
-        quoteData.supplier_response = 'accept';
-        quoteData.rf_final_fob = quoteData.rf_counter_fob; // THIRD PROMPT FIX: Finalized for all suppliers including Berry Farms
-        // THIRD PROMPT FIX: NO pre-awarded volumes - only set after "Send Allocations" button is clicked
-        quoteData.awarded_volume = null; // No pre-awarded - follows process
-        quoteData.offered_volume = null; // No pre-offered - follows process
-        quoteData.supplier_volume_response = null; // No pre-response - follows process
-        quoteData.supplier_volume_accepted = null; // No pre-accepted - follows process
+          // FIX SEEDING: Week 8 - only 8 suppliers finalized (Berry Farms missing - intentional gap)
+          // Skip Berry Farms quotes for week 8 (intentional gap to show workflow live)
+          if (email === berryFarmsEmail) {
+            console.log(`  ⚠️  Week 8: Skipping Berry Farms quote for ${item.name} ${item.pack_size} (intentional gap)`);
+            continue; // Skip Berry Farms - intentional gap
+          }
+          
+          // For 8 suppliers: finalized pricing (rf_final_fob set) but NO pre-awarded volumes
+          const counterAdjustment = -0.30 + Math.random() * 0.60;
+          quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
+          quoteData.supplier_response = 'accept';
+          quoteData.rf_final_fob = quoteData.rf_counter_fob; // FIX SEEDING: Finalized for 8 suppliers (Berry Farms missing)
+          // FIX SEEDING: NO pre-awarded volumes - only set after "Send Allocations" button is clicked
+          quoteData.awarded_volume = null; // No pre-awarded - follows process
+          quoteData.offered_volume = null; // No pre-offered - follows process
+          quoteData.supplier_volume_response = null; // No pre-response - follows process
+          quoteData.supplier_volume_accepted = null; // No pre-accepted - follows process
         }
         
         weekQuotes.push(quoteData);
@@ -368,14 +378,19 @@ async function seedEverything() {
       try {
         await safeUpsert('quotes', weekQuotes, 'week_id,item_id,supplier_id');
         totalQuotes += weekQuotes.length;
-        console.log(`  ✅ Week ${weekNum}: ${weekQuotes.length} quotes (${isWeek8 ? 'Berry Farms MISSING' : 'All suppliers'})`);
+        const expectedQuotes = isWeek8 ? (ITEMS.length * 8) : (ITEMS.length * 9); // Week 8: 8 suppliers, Weeks 1-7: 9 suppliers
+        console.log(`  ✅ Week ${weekNum}: ${weekQuotes.length} quotes (${isWeek8 ? '8 suppliers - Berry Farms MISSING (intentional gap)' : 'All 9 suppliers'})`);
+        if (weekQuotes.length !== expectedQuotes) {
+          console.warn(`  ⚠️  Expected ${expectedQuotes} quotes for week ${weekNum}, got ${weekQuotes.length}`);
+        }
       } catch (err) {
         console.log(`  ⚠️  Week ${weekNum} quotes error:`, err);
       }
     }
   }
   console.log(`  ✅ ${totalQuotes} total quotes`);
-  console.log(`  ✅ THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo ✓`);
+  console.log(`  ✅ FIX SEEDING: Week 8 - 8 suppliers finalized (Berry Farms missing - intentional gap) ✓`);
+  console.log(`  ✅ FIX SEEDING: Weeks 1-7 - all 9 suppliers finalized ✓`);
 
   // 5. Volumes (weeks 1-7 only, 100-5000 units per award)
   console.log('5. Volumes (weeks 1-7 only, 100-5000 units)...');
@@ -543,8 +558,10 @@ async function main() {
     console.log('   Paste keys once → run magic button → hard refresh.');
     console.log('   Demo saved — no more work.\n');
     
-    // NO MORE MANUAL SQL — EVERYTHING FIXED IN CODE
-// FINAL NO-MANUAL-SQL FIX: Seeding correct (8 berry SKUs, 5 suppliers, 8 weeks), pricing page loads with full workflow, dashboards sync, no slow loading, Netlify ready
+    // FIX SEEDING — EVERYTHING FIXED
+// FIX SEEDING: 8 berry SKUs, 9 suppliers (Berry Farms as #9), 8 weeks recent, weeks 1-7 all 9 finalized, week 8 only 8 suppliers (Berry Farms missing gap)
+// FIX AWARD VOLUME: Sandbox shows finalized pricing (rf_final_fob) from 8 shippers on 8 SKUs, weighted avg FOB, DLVD calculator updates real-time
+// FIX BERRY FARMS WEEK 8: No quote row for Berry Farms in week 8, shows "Pricing not available" (intentional gap to show workflow live)
 // NEXT LEVEL FIXED — FAST & FINALIZED READY
 // NEXT LEVEL FIX: 8 SKUs, 5 suppliers, 8 weeks (1-7 finalized, 8 open), week 8 has 4 finalized (Berry Farms missing), all workflow columns set
 // FIXED SHIPPERS WORKFLOW: Weeks 1-7 have full workflow (quoted → countered → finalized), Week 8 has 4 suppliers finalized

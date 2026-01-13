@@ -273,8 +273,28 @@ export function SupplierDashboard() {
     try {
       logger.debug('Loading quotes for week:', currentWeek.id, 'supplier:', session.supplier_id);
 
-      // THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo (not missing)
-      // Allow Berry Farms to submit pricing in week 8 for demo workflow
+      // FIX BERRY FARMS WEEK 8: Check if Berry Farms in week 8 - no quotes available (intentional gap)
+      const { data: supplierData } = await supabase
+        .from('suppliers')
+        .select('id, name, email')
+        .eq('id', session.supplier_id)
+        .single();
+      
+      const isBerryFarms = supplierData && (
+        supplierData.email === 'contact@berryfarms.com' || 
+        supplierData.name === 'Berry Farms' ||
+        supplierData.name?.toLowerCase().includes('berry farms')
+      );
+      
+      const isWeek8 = currentWeek.week_number === 8;
+      
+      // FIX BERRY FARMS WEEK 8: Berry Farms in week 8 - no quotes available (intentional gap)
+      if (isBerryFarms && isWeek8) {
+        logger.debug('FIX BERRY FARMS WEEK 8: Berry Farms in week 8 - no quotes available (intentional gap)');
+        setQuotes([]); // No quotes for Berry Farms in week 8
+        await loadAllAwardedVolumes();
+        return;
+      }
 
       // Ensure quotes exist for this week (creates them if missing) - automatically creates quotes when week is open
       if (currentWeek.status === 'open') {
@@ -560,10 +580,10 @@ export function SupplierDashboard() {
       );
       
       const isWeek8 = currentWeek.week_number === 8;
-      // THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo (not missing)
-      // Allow Berry Farms to submit pricing in week 8 for demo workflow
-      setIsBerryFarmsWeek8(false); // Always false - pricing is always available
-      logger.debug('THIRD PROMPT FIX: Berry Farms week 8 - pricing form OPEN for demo', { isBerryFarms, isWeek8 });
+      // FIX BERRY FARMS WEEK 8: Week 8 for Berry Farms - no quote row (intentional gap)
+      // Berry Farms missing to show workflow live: submit → finalize → award → lock → send → acceptance
+      setIsBerryFarmsWeek8(isBerryFarms && isWeek8); // True if Berry Farms in week 8
+      logger.debug('FIX BERRY FARMS WEEK 8: Berry Farms week 8 check', { isBerryFarms, isWeek8, isBerryFarmsWeek8: isBerryFarms && isWeek8 });
     };
     
     checkBerryFarmsWeek8();
@@ -905,9 +925,21 @@ export function SupplierDashboard() {
               />
             )}
 
-            {/* THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo (not missing) */}
-            {/* Pricing form is always available - no blocking message */}
-            {currentWeek.status === 'open' ? (
+            {/* FIX BERRY FARMS WEEK 8: Show "Pricing not available" for Berry Farms in week 8 (intentional gap) */}
+            {isBerryFarmsWeek8 && currentWeek.status === 'open' ? (
+              <div className="bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-orange-400/30 overflow-hidden relative">
+                <div className="relative z-10 p-8 text-center">
+                  <Lock className="w-16 h-16 text-orange-400 mx-auto mb-4" />
+                  <h2 className="text-2xl font-black text-white mb-2">Pricing Not Available</h2>
+                  <p className="text-white/80 text-lg mb-4">
+                    Pricing is not available for your supplier in Week {currentWeek.week_number}. This is an intentional gap in the workflow to demonstrate the live submission process.
+                  </p>
+                  <p className="text-white/60 text-sm">
+                    Please contact your Robinson Fresh representative if you have questions.
+                  </p>
+                </div>
+              </div>
+            ) : currentWeek.status === 'open' ? (
               quotes.length > 0 ? (
               <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden relative">
               <div className="relative z-10 p-6 border-b border-white/10 bg-gradient-to-r from-emerald-500/15 via-lime-500/15 to-emerald-500/15 backdrop-blur-sm">
