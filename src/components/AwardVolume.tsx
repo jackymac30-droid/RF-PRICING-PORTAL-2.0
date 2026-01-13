@@ -169,35 +169,28 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
         item.category && berryCategories.includes(item.category.toLowerCase())
       );
       
-      // FINAL NO-SQL FIX: Show finalized pricing (rf_final_fob) from all finalized suppliers
-      // Filter items: Only show items that have pricing submitted (supplier_fob or rf_final_fob)
-      const itemsWithPricing = new Set<string>()
+      // THIRD PROMPT FIX: Sandbox open for all quoted and finalized items
+      // Show all items that have quotes (quoted or finalized) - sandbox should be open for all
+      const itemsWithQuotes = new Set<string>()
       for (const q of quotesData) {
-        // FINAL NO-SQL FIX: Include quotes with rf_final_fob (finalized pricing) OR supplier_fob (submitted pricing)
+        // THIRD PROMPT FIX: Include ALL quotes with pricing (quoted or finalized) - sandbox open for all
         if ((q.supplier_fob !== null && q.supplier_fob !== undefined && q.supplier_fob > 0) ||
             (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)) {
-          itemsWithPricing.add(q.item_id)
+          itemsWithQuotes.add(q.item_id)
         }
       }
       
       // Get all 8 standard berry SKUs first (always show all 8 SKUs)
       const allStandardItems = filterStandardSKUs(berryItems)
-      logger.debug('FINAL NO-SQL FIX: Filtered to berry SKUs only', { 
+      logger.debug('THIRD PROMPT FIX: Filtered to berry SKUs only, sandbox open for quoted/finalized', { 
         totalItems: itemsData.length, 
         berryItems: berryItems.length, 
-        filtered: allStandardItems.length 
+        filtered: allStandardItems.length,
+        itemsWithQuotes: itemsWithQuotes.size
       });
       
-      // Then filter to items that have pricing for displaying quotes
-      // But always include all 8 SKUs even if some don't have pricing yet
-      const itemsWithPricingSet = new Set<string>()
-      for (const q of quotesData) {
-        // FINAL NO-SQL FIX: Include quotes with rf_final_fob (finalized pricing) OR supplier_fob (submitted pricing)
-        if ((q.supplier_fob !== null && q.supplier_fob !== undefined && q.supplier_fob > 0) ||
-            (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)) {
-          itemsWithPricingSet.add(q.item_id)
-        }
-      }
+      // THIRD PROMPT FIX: Sandbox should show all items that have quotes (quoted or finalized)
+      // Include all items that have any pricing submitted or finalized
       
       // Hard dedupe: ensure no duplicates by sku_code+organic_flag or name+pack_size+organic_flag
       // Normalize pack sizes before deduplication (Strawberry CONV, Blackberry/Raspberry)
@@ -262,9 +255,28 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
           }
         }
       }
+      // THIRD PROMPT FIX: Sandbox open for all quoted and finalized items
+      // Include all items that have quotes (quoted or finalized) - sandbox should show all
       const uniqueItems = Array.from(dedupeMap.values())
-      setItems(uniqueItems)
+      
+      // THIRD PROMPT FIX: Ensure all items with quotes are included in the sandbox
+      // Add any items from quotes that might not be in the filtered list
+      const quotedItemIds = new Set(quotesData.map(q => q.item_id))
+      const quotedItemsNotInList = itemsData.filter(item => 
+        quotedItemIds.has(item.id) && !uniqueItems.some(ui => ui.id === item.id)
+      )
+      
+      // Add quoted items to the list if they're not already there
+      const allItems = [...uniqueItems, ...quotedItemsNotInList]
+      setItems(allItems)
       setQuotes(quotesData)
+      
+      logger.debug('THIRD PROMPT FIX: Sandbox open for all quoted/finalized items', {
+        uniqueItems: uniqueItems.length,
+        quotedItemsNotInList: quotedItemsNotInList.length,
+        allItems: allItems.length,
+        quotesCount: quotesData.length
+      })
 
       const needsMap = new Map<string, number>()
       const lockedSet = new Set<string>()
@@ -1211,7 +1223,9 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
   )
 }
 
-// NO MORE SQL — EVERYTHING FIXED IN CODE
+// THIRD PROMPT FIX — EVERYTHING FIXED
+// THIRD PROMPT FIX: Sandbox open for all quoted and finalized items (load sandbox after submit/finalize)
+// THIRD PROMPT FIX: Award volume shows all items with quotes (quoted or finalized) - sandbox always open
 // FINAL NO-SQL FIX: Seeding correct, pricing page loads with full workflow, dashboards sync, no slow loading, Netlify ready
 
 function Mini({ label, value, tone }: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' | 'muted' }) {

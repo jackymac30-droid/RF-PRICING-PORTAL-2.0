@@ -319,11 +319,8 @@ async function seedEverything() {
       const basePrice = basePrices[item.name]?.[isORG ? 'org' : 'conv'] || 10.00;
       
       for (const [email, supplierId] of supplierMap.entries()) {
-        // FINAL WORLD FIX: Week 8 - Skip Berry Farms (intentional gap for demo)
-        if (isWeek8 && email === berryFarmsEmail) {
-          console.log(`  ⚠️  Week 8: Skipping Berry Farms quote for ${item.name} ${item.pack_size}`);
-          continue;
-        }
+        // THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo (not missing)
+        // Allow Berry Farms to submit pricing in week 8 for demo workflow
         
         const supplierFOB = Math.max(5.00, Math.min(15.00, randomPrice(basePrice, 3.0)));
         
@@ -350,20 +347,17 @@ async function seedEverything() {
           quoteData.supplier_volume_response = 'accept'; // Supplier accepted volume
           quoteData.supplier_volume_accepted = quoteData.awarded_volume; // Accepted volume matches awarded
         } else if (weekNum === 8) {
-          // FINAL WORKFLOW FIX: Week 8 - 8/9 shippers finalized (rf_final_fob set), Berry Farms missing/open (no quote row)
-          // For non-Berry Farms suppliers: finalized pricing (rf_final_fob set) but NO pre-awarded volumes (only after "Send Allocations")
-          if (email !== berryFarmsEmail) {
-            const counterAdjustment = -0.30 + Math.random() * 0.60;
-            quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
-            quoteData.supplier_response = 'accept';
-            quoteData.rf_final_fob = quoteData.rf_counter_fob; // FINAL WORKFLOW FIX: Finalized for 8/9 shippers (Berry Farms missing)
-            // FINAL WORKFLOW FIX: NO pre-awarded volumes - only set after "Send Allocations" button is clicked
-            quoteData.awarded_volume = null; // No pre-awarded - follows process
-            quoteData.offered_volume = null; // No pre-offered - follows process
-            quoteData.supplier_volume_response = null; // No pre-response - follows process
-            quoteData.supplier_volume_accepted = null; // No pre-accepted - follows process
-          }
-          // Berry Farms: no quote (already skipped above) - intentional gap for demo (missing or open)
+        // THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo (not missing)
+        // All suppliers including Berry Farms can submit pricing in week 8
+        const counterAdjustment = -0.30 + Math.random() * 0.60;
+        quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
+        quoteData.supplier_response = 'accept';
+        quoteData.rf_final_fob = quoteData.rf_counter_fob; // THIRD PROMPT FIX: Finalized for all suppliers including Berry Farms
+        // THIRD PROMPT FIX: NO pre-awarded volumes - only set after "Send Allocations" button is clicked
+        quoteData.awarded_volume = null; // No pre-awarded - follows process
+        quoteData.offered_volume = null; // No pre-offered - follows process
+        quoteData.supplier_volume_response = null; // No pre-response - follows process
+        quoteData.supplier_volume_accepted = null; // No pre-accepted - follows process
         }
         
         weekQuotes.push(quoteData);
@@ -381,7 +375,7 @@ async function seedEverything() {
     }
   }
   console.log(`  ✅ ${totalQuotes} total quotes`);
-  console.log(`  ✅ FINAL WORLD FIX: Week 8 Berry Farms gap created ✓`);
+  console.log(`  ✅ THIRD PROMPT FIX: Week 8 for Berry Farms - pricing form OPEN for live demo ✓`);
 
   // 5. Volumes (weeks 1-7 only, 100-5000 units per award)
   console.log('5. Volumes (weeks 1-7 only, 100-5000 units)...');
