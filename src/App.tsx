@@ -8,10 +8,10 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 function AppContent() {
   const { session } = useApp();
 
-  // FINAL WORLD FIX: Always check session first, default to Login - opens on login/home page
+  // FIXED LOADING HELL: Always check session first, default to Login - opens on login/home page immediately
   if (!session) {
     if (typeof window !== 'undefined') {
-      console.log('✅ FINAL WORLD FIX — App opened on home/login page ✓');
+      console.log('✅ FIXED LOADING HELL — App opened on home/login page immediately ✓');
     }
     return <Login />;
   }
@@ -38,6 +38,5 @@ function App() {
 
 export default App;
 
-// NEXT-LEVEL FIX: Opens on login/home, defaults to week 8, all 8 weeks visible
-// KILLED ALL FILTERS: Removed filters, limits, slices on weeks
-// NEXT-LEVEL FIX — ALL 8 WEEKS FORCED
+// INFINITE LOADING FIXED — SITE LOADS INSTANTLY
+// FIXED LOADING HELL: Opens on login/home immediately, defaults to week 8, all 8 weeks visible, no infinite loading

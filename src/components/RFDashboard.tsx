@@ -47,7 +47,21 @@ export function RFDashboard() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [quotes, setQuotes] = useState<QuoteWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+  
+  // FIXED LOADING HELL: Add timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.error('❌ FIXED LOADING HELL: Loading timeout - dashboard stuck loading');
+        setLoadingError('Loading failed — check console. If this persists, refresh the page.');
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
+    
+    return () => clearTimeout(timeout);
+  }, [loading]);
   const [submittedSuppliers, setSubmittedSuppliers] = useState<Supplier[]>([]);
   const [notSubmittedSuppliers, setNotSubmittedSuppliers] = useState<Supplier[]>([]);
   const [counterSuppliers, setCounterSuppliers] = useState<Supplier[]>([]);
@@ -234,14 +248,27 @@ export function RFDashboard() {
       }
     }
   }, [selectedWeek?.status, quotes, selectedSupplier]);
-  const loadData = useCallback(async () => {
-    try {
-      await enforceWeekStatusHygiene();
-      const [weeksData, itemsData, suppliersData] = await Promise.all([
-        fetchWeeks(),
-        fetchItems(),
-        fetchSuppliers(),
-      ]);
+  const loadData = useCallback(async () => {
+    try {
+      setLoadingError(null);
+      setLoading(true);
+      
+      // FIXED LOADING HELL: Add timeout wrapper for all fetches
+      const fetchWithTimeout = async <T,>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> => {
+        return Promise.race([
+          promise,
+          new Promise<T>((_, reject) => 
+            setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs)
+          )
+        ]);
+      };
+      
+      await enforceWeekStatusHygiene();
+      const [weeksData, itemsData, suppliersData] = await Promise.all([
+        fetchWithTimeout(fetchWeeks(), 5000),
+        fetchWithTimeout(fetchItems(), 5000),
+        fetchWithTimeout(fetchSuppliers(), 5000),
+      ]);
       // NEXT-LEVEL FIX: Set ALL 8 weeks, no filtering/slicing - show everything
       // KILLED FILTER: Removed ALL .filter(), .slice(), .limit() on weeks
       setWeeks(weeksData);
@@ -369,13 +396,16 @@ export function RFDashboard() {
           }
         }
       }
-    } catch (err) {
-      logger.error('Error loading data:', err);
-      showToast('Failed to load dashboard data. Please check your connection and try again.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    } catch (err) {
+      logger.error('FIXED LOADING HELL: Error loading data:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      setLoadingError(`Loading failed — check console. Error: ${errorMsg}`);
+      showToast('Failed to load dashboard data. Please check your connection and try again.', 'error');
+      console.error('❌ FIXED LOADING HELL: Dashboard load failed:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
   const loadQuotes = useCallback(async () => {
     if (!selectedWeek || !selectedSupplier) return;
     try {

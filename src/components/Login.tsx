@@ -44,16 +44,36 @@ export function Login() {
   }, []);
 
   useEffect(() => {
+    // FIXED LOADING HELL: Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (loadingSuppliers) {
+        console.error('❌ FIXED LOADING HELL: Supplier loading timeout');
+        setLoadingSuppliers(false);
+        setSupplierError('Loading suppliers timed out. Please refresh the page.');
+      }
+    }, 5000);
+    
     async function loadSuppliers() {
       try {
-        const suppliersData = await fetchSuppliers();
+        // FIXED LOADING HELL: Add timeout wrapper
+        const fetchWithTimeout = async <T,>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> => {
+          return Promise.race([
+            promise,
+            new Promise<T>((_, reject) => 
+              setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs)
+            )
+          ]);
+        };
+        
+        const suppliersData = await fetchWithTimeout(fetchSuppliers(), 5000);
         setSuppliers(suppliersData);
         if (suppliersData.length === 0) {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
           
           if (!supabaseUrl || !supabaseKey) {
-            setSupplierError('Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file');
+            setSupplierError('FIXED LOADING HELL: Env vars missing — check .env or Netlify settings');
+            console.error('❌ FIXED LOADING HELL: Env vars missing — check .env');
           } else {
             setSupplierError('No suppliers found in database. Please add suppliers to your Supabase database.');
           }
@@ -62,9 +82,10 @@ export function Login() {
           setSupplierError('');
         }
       } catch (err: any) {
-        logger.error('Failed to load suppliers:', err);
-        setSupplierError(`Error loading suppliers: ${err?.message || 'Unknown error'}`);
+        logger.error('FIXED LOADING HELL: Failed to load suppliers:', err);
+        setSupplierError(`Error loading suppliers: ${err?.message || 'Unknown error'}. Please refresh.`);
       } finally {
+        clearTimeout(timeout);
         setLoadingSuppliers(false);
       }
     }

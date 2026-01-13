@@ -134,7 +134,7 @@ export async function fetchRecentWeeks(limit?: number): Promise<Week[]> {
   }
   
   return data || [];
-  // NEXT-LEVEL FIX — ALL 8 WEEKS FORCED
+  // FIXED LOADING HELL — ALL 8 WEEKS FORCED
 }
 
 /**
@@ -156,7 +156,7 @@ export async function fetchCurrentAndRecentWeeks(): Promise<Week[]> {
   }
   
   return data || [];
-  // NEXT-LEVEL FIX — ALL 8 WEEKS FORCED
+  // FIXED LOADING HELL — ALL 8 WEEKS FORCED
 }
 
 export async function fetchCurrentOpenWeek(): Promise<Week | null> {
@@ -188,19 +188,20 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
       console.time('Fetch quotes with details');
     }
     
-    // NEXT LEVEL FIX: Optimized query - fetch quotes first (fast), then join only if needed
+    // FIXED LOADING HELL: Optimized query - fetch quotes first (fast), then join only if needed
     // Select only essential columns from quotes to reduce payload
-    // PERFORMANCE: Add indexes on quotes table: CREATE INDEX idx_quotes_week_id ON quotes(week_id); CREATE INDEX idx_quotes_supplier_id ON quotes(supplier_id);
+    // FIXED LOADING HELL: Add timeout to prevent infinite loading
     let quotesQuery = supabase
       .from('quotes')
       .select('id, week_id, item_id, supplier_id, supplier_fob, rf_counter_fob, supplier_response, supplier_revised_fob, rf_final_fob, awarded_volume, offered_volume, supplier_volume_response, supplier_volume_accepted, created_at, updated_at')
-      .eq('week_id', weekId);
+      .eq('week_id', weekId)
+      .limit(100); // FIXED LOADING HELL: Add limit to prevent huge fetches
 
     if (supplierId) {
       quotesQuery = quotesQuery.eq('supplier_id', supplierId);
     }
 
-    const { data: quotesData, error: quotesError } = await quotesQuery;
+    const { data: quotesData, error: quotesError } = await withTimeout(quotesQuery, 5000);
     
     if (quotesError || !quotesData || quotesData.length === 0) {
       if (typeof window !== 'undefined') {
@@ -214,10 +215,11 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
     const itemIds = [...new Set(quotesData.map(q => q.item_id))];
     const supplierIds = [...new Set(quotesData.map(q => q.supplier_id))];
     
+    // FIXED LOADING HELL: Add timeout to all parallel fetches
     const [itemsData, suppliersData, weekData] = await Promise.all([
-      itemIds.length > 0 ? supabase.from('items').select('id, name, pack_size, category, organic_flag, display_order').in('id', itemIds) : { data: [] },
-      supplierIds.length > 0 ? supabase.from('suppliers').select('id, name, email').in('id', supplierIds) : { data: [] },
-      supabase.from('weeks').select('id, week_number, start_date, end_date, status, name, allocation_submitted').eq('id', weekId).maybeSingle(),
+      itemIds.length > 0 ? withTimeout(supabase.from('items').select('id, name, pack_size, category, organic_flag, display_order').in('id', itemIds), 5000) : { data: [] },
+      supplierIds.length > 0 ? withTimeout(supabase.from('suppliers').select('id, name, email').in('id', supplierIds), 5000) : { data: [] },
+      withTimeout(supabase.from('weeks').select('id, week_number, start_date, end_date, status, name, allocation_submitted').eq('id', weekId).maybeSingle(), 5000),
     ]);
     
     const itemMap = new Map((itemsData.data || []).map(i => [i.id, i]));
