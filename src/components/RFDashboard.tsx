@@ -76,32 +76,6 @@ export function RFDashboard() {
   const [allSuppliersFinalized, setAllSuppliersFinalized] = useState(false);
   const [resettingData, setResettingData] = useState(false);
   const [resettingWeek6, setResettingWeek6] = useState(false);
-  // NEXT LEVEL FIX: Listen for pricing submitted - immediate redirect to allocation tab (sandbox/play area)
-  useEffect(() => {
-    const handlePricingSubmitted = (event: CustomEvent) => {
-      const { weekId, immediateRedirect } = event.detail || {};
-      if (weekId && selectedWeek?.id === weekId) {
-        logger.debug('NEXT LEVEL FIX: Pricing submitted event received, immediately opening allocation tab', { 
-          weekId,
-          currentView: mainView,
-          immediateRedirect
-        });
-        // NEXT LEVEL FIX: Immediate redirect to AwardVolume tab (sandbox/play area) to show estimated FOB
-        if (mainView !== 'award_volume') {
-          setMainView('award_volume');
-          showToast('Pricing submitted - opened Allocation tab with estimated FOB', 'info');
-          // Force reload quotes to show latest pricing
-          setTimeout(() => {
-            loadAllQuotesForWeek();
-          }, 100);
-        }
-      }
-    };
-    window.addEventListener('pricing-submitted', handlePricingSubmitted as EventListener);
-    return () => {
-      window.removeEventListener('pricing-submitted', handlePricingSubmitted as EventListener);
-    };
-  }, [selectedWeek?.id, mainView, showToast, loadAllQuotesForWeek]);
   
   // Listen for navigation to Volume Acceptance from Award Volume or supplier responses
   useEffect(() => {
