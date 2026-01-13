@@ -444,7 +444,7 @@ export function RFDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedWeek, showToast]);
+  }, [selectedWeek?.id, showToast]); // FIXED LOADING HELL: Only depend on ID, not whole object
   
   // NEXT LEVEL FIX: Listen for pricing submitted - immediate redirect to allocation tab (sandbox/play area)
   // Moved here after loadAllQuotesForWeek is defined to avoid initialization error
