@@ -3,6 +3,17 @@ import { supabase } from './supabase';
 import { logger } from './logger';
 import type { Session, Supplier, Item, Week, Quote, QuoteWithDetails, SKUStatus, SupplierStats, SupplierRanking, AnalyticsBySKU, AnalyticsBySupplier, WeekItemVolume } from '../types';
 
+// FIXED LOADING HELL: Add timeout to prevent infinite loading
+// This function wraps promises with a timeout to prevent infinite loading
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => 
+      setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
+}
+
 export const DEMO_PASSWORD = '123';
 const SESSION_KEY = 'rf_pricing_session';
 
