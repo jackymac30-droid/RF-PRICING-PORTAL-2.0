@@ -196,9 +196,12 @@ export function VolumeOffers({ items, quotes, weekNumber, onRefresh }: VolumeOff
               if (!quote) return null;
 
               const offeredVolume = quote.offered_volume || 0;
+              // FIXED WORKFLOW: Show final price and qty awarded per SKU
               const finalPrice = quote.rf_final_fob || quote.supplier_revised_fob || quote.supplier_fob;
               const hasResponded = !!quote.supplier_volume_response;
               const currentResponse = responses[item.id];
+              // FIXED WORKFLOW: Get awarded volume (may differ from offered if supplier revised)
+              const awardedVolume = quote.supplier_volume_accepted || quote.awarded_volume || offeredVolume;
 
               return (
                 <tr key={item.id} className="hover:bg-emerald-50 transition-colors">
@@ -209,11 +212,23 @@ export function VolumeOffers({ items, quotes, weekNumber, onRefresh }: VolumeOff
                   <td className="px-6 py-5 text-gray-800 font-medium">{item.pack_size}</td>
                   <td className="px-6 py-5 text-right">
                     <span className="text-lg font-bold text-gray-900">{formatCurrency(finalPrice || 0)}</span>
+                    {/* FIXED WORKFLOW: Show final price per SKU if different */}
+                    {quote.rf_final_fob && quote.rf_final_fob !== finalPrice && (
+                      <div className="text-sm text-emerald-600 mt-1 font-semibold">
+                        Final: {formatCurrency(quote.rf_final_fob)}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-5 text-right">
                     <span className="inline-flex items-center px-4 py-2 rounded-lg text-base font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                       {offeredVolume} cases
                     </span>
+                    {/* FIXED WORKFLOW: Show qty awarded per SKU if different from offered */}
+                    {awardedVolume !== offeredVolume && (
+                      <div className="text-sm text-emerald-600 mt-1 font-semibold">
+                        Awarded: {awardedVolume.toLocaleString()} cases
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-5">
                     {hasResponded ? (

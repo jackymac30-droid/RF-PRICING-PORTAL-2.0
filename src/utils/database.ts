@@ -655,6 +655,30 @@ export async function createNewWeek(): Promise<Week | null> {
     }
   }
 
+  // FIXED WORKFLOW: Send email to all suppliers when week is created
+  try {
+    const { sendPricingReminder } = await import('./emailService');
+    const emailPromises = suppliers.map(supplier => 
+      sendPricingReminder(supplier, newWeek, newWeek.id)
+        .then(result => {
+          if (result.success) {
+            logger.debug(`FIXED WORKFLOW: Email sent to ${supplier.name} for week ${newWeek.week_number}`);
+          } else {
+            logger.warn(`FIXED WORKFLOW: Failed to send email to ${supplier.name}: ${result.error}`);
+          }
+        })
+        .catch(err => {
+          logger.error(`FIXED WORKFLOW: Error sending email to ${supplier.name}:`, err);
+        })
+    );
+    await Promise.all(emailPromises);
+    logger.debug(`FIXED WORKFLOW: Sent emails to ${suppliers.length} suppliers for week ${newWeek.week_number}`);
+  } catch (emailError) {
+    logger.error('FIXED WORKFLOW: Error sending emails to suppliers:', emailError);
+    // Don't fail week creation if emails fail - log and continue
+  }
+
+  // FIXED WORKFLOW: Week created → emails sent → supplier dashboard ready
   return newWeek;
 }
 
@@ -743,6 +767,7 @@ export async function getSuppliersWithSubmissions(weekId: string): Promise<{
   counter: Supplier[];
   finalized: Supplier[];
 }> {
+  // FINAL NO-SQL FIX: Ensure quotes load correctly to show submitted prices
   const suppliers = await fetchSuppliers();
   const quotes = await fetchQuotes(weekId);
 
@@ -754,37 +779,36 @@ export async function getSuppliersWithSubmissions(weekId: string): Promise<{
   for (const supplier of suppliers) {
     const supplierQuotes = quotes.filter(q => q.supplier_id === supplier.id);
 
-    // Supplier is "submitted" if at least ONE quote has supplier_fob OR supplier_dlvd non-null
-    const hasSubmitted = supplierQuotes.some(q => q.supplier_fob !== null || q.supplier_dlvd !== null);
+    // FINAL NO-SQL FIX: Supplier is "submitted" if at least ONE quote has supplier_fob (quoted status)
+    const hasSubmitted = supplierQuotes.some(q => q.supplier_fob !== null && q.supplier_fob !== undefined);
 
     if (!hasSubmitted) {
       notSubmitted.push(supplier);
       continue;
     }
 
-    // Check if all quotes with prices have been finalized
-    const quotesWithPrices = supplierQuotes.filter(q => q.supplier_fob !== null);
-    const allFinalPricesSet = quotesWithPrices.length > 0 && quotesWithPrices.every(q => q.rf_final_fob !== null);
+    // FINAL NO-SQL FIX: Check if all quotes with prices have been finalized (finalized status)
+    const quotesWithPrices = supplierQuotes.filter(q => q.supplier_fob !== null && q.supplier_fob !== undefined);
+    const allFinalPricesSet = quotesWithPrices.length > 0 && quotesWithPrices.every(q => q.rf_final_fob !== null && q.rf_final_fob !== undefined);
     
-    // If all priced quotes are finalized, supplier is finalized (highest priority)
+    // FINAL NO-SQL FIX: If all priced quotes are finalized, supplier is finalized (highest priority)
     if (allFinalPricesSet) {
       finalized.push(supplier);
       continue;
     }
 
-    // Otherwise, categorize by workflow stage
-    const hasCounters = supplierQuotes.some(q => q.rf_counter_fob !== null);
-    const hasResponses = supplierQuotes.some(q => q.supplier_response !== null);
-    const hasAnyFinalized = supplierQuotes.some(q => q.rf_final_fob !== null);
+    // FINAL NO-SQL FIX: Otherwise, categorize by workflow stage: quoted → countered → finalized
+    const hasCounters = supplierQuotes.some(q => q.rf_counter_fob !== null && q.rf_counter_fob !== undefined);
+    const hasResponses = supplierQuotes.some(q => q.supplier_response !== null && q.supplier_response !== undefined);
+    const hasAnyFinalized = supplierQuotes.some(q => q.rf_final_fob !== null && q.rf_final_fob !== undefined);
 
-    // If there are counters and responses, or if there are counters and some finalized prices
-    // (RF is in the process of finalizing), show in counter tab
-    if (hasCounters && (hasResponses || hasAnyFinalized)) {
-      counter.push(supplier);
-    } else if (hasCounters) {
-      // Counter sent but no response yet - still in counter tab
+    // FINAL NO-SQL FIX: If there are counters (countered status), show in counter tab
+    // Workflow: quoted (supplier_fob) → countered (rf_counter_fob) → finalized (rf_final_fob)
+    if (hasCounters) {
+      // Counter sent - show in counter tab (regardless of response)
       counter.push(supplier);
     } else {
+      // Quoted but not countered yet - show in submitted tab
       submitted.push(supplier);
     }
   }

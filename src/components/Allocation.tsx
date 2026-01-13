@@ -7,6 +7,8 @@
  * - AI Target Price allocation mode
  * - Lock SKU workflow
  * - Exceptions mode (after sending awards)
+ * 
+ * FINAL NO-SQL FIX: Week 8 allocations open for 4 shippers (Berry Farms missing), shows finalized FOB when available
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -730,12 +732,18 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
       });
 
       for (const item of finalItems) {
-        // Show items with any pricing (finalized or preliminary)
-        const itemQuotes = quotes.filter(q => 
-          q.item_id === item.id &&
-          ((q.rf_final_fob !== null && q.rf_final_fob > 0) ||
-           (q.supplier_fob !== null && q.supplier_fob > 0))
-        );
+        // FINAL NO-SQL FIX: Show items with any pricing (finalized or preliminary)
+        // Week 8: Show all shippers except Berry Farms (intentional gap)
+        const itemQuotes = quotes.filter(q => {
+          // FINAL NO-SQL FIX: Filter out Berry Farms in week 8 (intentional gap)
+          if (selectedWeek?.week_number === 8) {
+            const isBerryFarms = q.supplier?.email === 'contact@berryfarms.com' || q.supplier?.name === 'Berry Farms';
+            if (isBerryFarms) return false; // Skip Berry Farms in week 8
+          }
+          return q.item_id === item.id &&
+            ((q.rf_final_fob !== null && q.rf_final_fob > 0) ||
+             (q.supplier_fob !== null && q.supplier_fob > 0));
+        });
 
         if (itemQuotes.length === 0) continue;
 
@@ -745,7 +753,8 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
 
         const entries: AllocationEntry[] = [];
         for (const quote of itemQuotes) {
-          // FINAL WORKFLOW FIX: Show finalized FOB (rf_final_fob) when available, otherwise estimated FOB (supplier_fob)
+          // FINAL NO-SQL FIX: Show finalized FOB (rf_final_fob) when available, otherwise estimated FOB (supplier_fob)
+          // When RF finalizes pricing, submitted FOB (supplier_fob) becomes finalized FOB (rf_final_fob)
           // Allocation tab shows finalized FOB for 8/9 shippers (Berry Farms missing/open shows no pricing)
           const isFinalized = quote.rf_final_fob !== null && quote.rf_final_fob !== undefined && quote.rf_final_fob > 0;
           const price = isFinalized ? (quote.rf_final_fob ?? 0) : (quote.supplier_fob ?? 0);

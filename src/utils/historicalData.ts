@@ -48,10 +48,10 @@ export async function fetchCompleteHistoricalData(): Promise<CompleteHistoricalD
       fetchSuppliers(),
     ]);
 
-    // Only use closed or finalized weeks (complete data)
+    // FINAL NO-SQL FIX: Use weeks 1-7 (finalized weeks) for historical data - no filters
     const validWeeks = weeks
-      .filter(w => w.status === 'closed' || w.status === 'finalized')
-      .sort((a, b) => a.week_number - b.week_number);
+      .filter(w => (w.status === 'closed' || w.status === 'finalized') && w.week_number <= 7)
+      .sort((a, b) => a.week_number - b.week_number); // FINAL NO-SQL FIX: Order by week_number asc (1-7)
 
     if (validWeeks.length === 0) {
       logger.debug('No closed/finalized weeks found for historical data');

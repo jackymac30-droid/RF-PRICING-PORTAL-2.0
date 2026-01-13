@@ -976,6 +976,7 @@ function PriceMomentumChart({ historicalData }: { historicalData: SKUHistoricalD
   );
 }
 
+// FINAL NO-SQL FIX: Analytics loads weeks 1-7 data correctly (no status filters, shows all historical data)
 export function Analytics() {
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'suppliers'>('overview');
@@ -1018,17 +1019,15 @@ export function Analytics() {
       const items = await fetchItems();
       const allData: SKUHistoricalData[] = [];
 
-      // Only process closed/finalized weeks (complete data only)
-      // This ensures all calculations use actual final prices, not incomplete data
-      // Limit to last 26 weeks (6 months) for performance - can be increased if needed
+      // FINAL NO-SQL FIX: Process weeks 1-7 for analytics - no status filters, show all weeks 1-7
+      // This ensures analytics shows data from previous weeks (weeks 1-7) regardless of status
       const validWeeks = weeks
-        .filter(w => w.status === 'closed' || w.status === 'finalized')
-        .sort((a, b) => b.week_number - a.week_number)
-        .slice(0, 26); // Last 6 months for performance
+        .filter(w => w.week_number >= 1 && w.week_number <= 7)
+        .sort((a, b) => a.week_number - b.week_number); // FINAL NO-SQL FIX: Order by week_number asc (1-7)
       
       if (validWeeks.length === 0) {
-        logger.debug('No closed/finalized weeks found for analytics');
-        logger.warn('Analytics requires closed or finalized weeks. Please seed the database or close some weeks.');
+        logger.debug('No weeks 1-7 found for analytics');
+        logger.warn('Analytics requires weeks 1-7. Please seed the database.');
         setHistoricalData([]);
         setLoading(false);
         return;

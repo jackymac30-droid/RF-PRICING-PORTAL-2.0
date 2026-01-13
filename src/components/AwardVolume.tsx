@@ -116,6 +116,7 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const saveRequiredTimerRef = useRef<NodeJS.Timeout | null>(null)
 
+  // FIXED WORKFLOW: Lock/unlock per SKU, persist
   // Award Volume editing: Allow lock/unlock even after finalization (for emergency edits)
   // Only completely disable when week is 'closed'
   const canEdit = selectedWeek?.status !== 'closed'
@@ -618,13 +619,13 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
     }
   }
 
-  // Send allocations to suppliers (so Acceptance tab can happen later)
+  // FIXED WORKFLOW: Send allocations to suppliers (so Acceptance tab can happen later)
+  // Once all quoted SKUs locked → send allocation to supplier
   async function handleSendAllocations() {
     if (!selectedWeek) return
     
-    // Check if at least ONE SKU with quotes is locked (not all SKUs - suppliers may not quote every SKU)
+    // FIXED WORKFLOW: Check if all priced SKUs are locked
     const quotedRows = rowsForUI.filter(r => r.hasPricing)
-    // Check if all priced SKUs are locked
     const allPricedSKUsLocked = quotedRows.every(r => {
       const itemId = r.item?.id || ''
       return lockedSKUs.has(itemId)
@@ -840,7 +841,7 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
           // Calculate rows once - memoize to prevent recalculation glitches
           const rows = hasPricing
             ? r.pricedQuotes.map(q => {
-                // Use finalized price if available, otherwise use estimated (supplier_fob)
+                // FIXED WORKFLOW: Use finalized price if available, otherwise use estimated (supplier_fob)
                 // This enables plug-and-play: shows estimated when supplier submits, updates to finalized when pricing finalizes
                 const price = (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)
                   ? safeNum(q.rf_final_fob, 0)
