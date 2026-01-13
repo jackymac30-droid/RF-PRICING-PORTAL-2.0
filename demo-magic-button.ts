@@ -471,11 +471,11 @@ async function verify() {
     console.log(`${itemCheck ? '✅' : '❌'} Items: ${itemCount || 0}/8`);
     if (!itemCheck) allPass = false;
     
-    // Suppliers: 5 with Berry Farms
+    // Suppliers: 9 with Berry Farms as #9
     const { data: suppliers, count: supplierCount } = await supabase.from('suppliers').select('*', { count: 'exact', head: false });
     const hasBerryFarms = suppliers?.some((s: any) => s.email === 'contact@berryfarms.com') || false;
-    const supplierCheck = supplierCount === 5 && hasBerryFarms;
-    console.log(`${supplierCheck ? '✅' : '❌'} Suppliers: ${supplierCount || 0}/5 (Berry Farms: ${hasBerryFarms ? 'YES' : 'NO'})`);
+    const supplierCheck = supplierCount === 9 && hasBerryFarms;
+    console.log(`${supplierCheck ? '✅' : '❌'} Suppliers: ${supplierCount || 0}/9 (Berry Farms as #9: ${hasBerryFarms ? 'YES' : 'NO'})`);
     if (!supplierCheck) allPass = false;
     
     // Weeks: 8 (7 finalized, 1 open) - VERIFY ALL 8 WEEKS VISIBLE
