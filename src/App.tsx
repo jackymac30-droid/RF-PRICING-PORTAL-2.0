@@ -6,11 +6,19 @@ import { RFDashboard } from './components/RFDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
-  // WORLD-DEPENDS-ON-IT FIX: Check env vars first - show error if missing
+  // FIX LOCALHOST: Allow app to load on localhost even without Supabase configured
+  // Show warning but don't block the app
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const hasPlaceholderValues = supabaseUrl?.includes('your-project') || supabaseAnonKey?.includes('your-anon');
   
-  if (!supabaseUrl || !supabaseAnonKey) {
+  // FIX LOCALHOST: On localhost, show warning but still load the app
+  if (isLocalhost && (!supabaseUrl || !supabaseAnonKey || hasPlaceholderValues)) {
+    console.warn('⚠️ LOCALHOST: Supabase not configured. Update .env file with real credentials.');
+    // Don't block - let the app load so user can see the seed button
+  } else if (!isLocalhost && (!supabaseUrl || !supabaseAnonKey)) {
+    // On production/Netlify, show error
     const missing = [];
     if (!supabaseUrl) missing.push('VITE_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL');
     if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY');
