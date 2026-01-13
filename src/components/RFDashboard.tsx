@@ -1096,30 +1096,43 @@ export function RFDashboard() {
       </div>
     </div>;
   }
-  // Empty state: no data at all
-  // FIX LOCALHOST: If database is empty, redirect to login page to show seed button
+  // FIX LOCALHOST: Empty state - auto-logout to show login page with seed button
   const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const hasLoggedOutRef = useRef(false);
+  
+  // FIX LOCALHOST: On localhost with empty database, logout immediately via useEffect
+  useEffect(() => {
+    if (isLocalhost && (suppliers.length === 0 || items.length === 0 || weeks.length === 0) && !hasLoggedOutRef.current && !loading) {
+      hasLoggedOutRef.current = true;
+      console.log('🔄 FIX LOCALHOST: Database empty, logging out to show login page with seed button');
+      logout();
+      // Clear localStorage session immediately
+      localStorage.removeItem('rf_pricing_session');
+      // Force page reload to show login page
+      setTimeout(() => {
+        window.location.href = window.location.origin;
+      }, 100);
+    }
+  }, [isLocalhost, suppliers.length, items.length, weeks.length, loading, logout]);
   
   if (suppliers.length === 0 || items.length === 0 || weeks.length === 0) {
-    // FIX LOCALHOST: On localhost, if no data, logout and redirect to login page to show seed button
+    // FIX LOCALHOST: On localhost, show message and auto-redirect
     if (isLocalhost) {
-      // Clear session and redirect to login page
-      logout();
       return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 flex items-center justify-center">
           <div className="text-center max-w-md">
-            <Package className="w-16 h-16 text-white/30 mx-auto mb-4" />
+            <Package className="w-16 h-16 text-white/30 mx-auto mb-4 animate-pulse" />
             <h3 className="text-xl font-bold text-white mb-2">Database Empty</h3>
             <p className="text-white/60 mb-4">
-              Redirecting to login page where you can seed the database...
+              Redirecting to login page... Look for the blue "Seed Database" button!
             </p>
-            <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-left text-sm text-white/70 mb-4">
-              <p className="font-semibold mb-2">Current Status:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>{suppliers.length} suppliers</li>
-                <li>{items.length} items</li>
-                <li>{weeks.length} weeks</li>
-              </ul>
+            <div className="bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/50 rounded-xl p-4 text-sm text-blue-100">
+              <p className="font-semibold mb-2">💡 What to do:</p>
+              <ol className="text-left list-decimal list-inside space-y-1 ml-2">
+                <li>You'll see the login page</li>
+                <li>Look for the blue "Seed Database" button at the bottom</li>
+                <li>Click it to add 9 suppliers and 8 items</li>
+              </ol>
             </div>
           </div>
         </div>
