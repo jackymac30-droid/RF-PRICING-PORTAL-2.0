@@ -678,7 +678,36 @@ export function Login() {
                   <button
                     onClick={async () => {
                       setLoading(true);
+                      setError('');
                       try {
+                        // FIX LOCALHOST: Check if Supabase is actually configured before trying to seed
+                        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+                        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+                        
+                        if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('placeholder') || supabaseKey.includes('placeholder')) {
+                          throw new Error(
+                            'Supabase not configured! Please add your Supabase credentials to the .env file:\n\n' +
+                            '1. Get your Supabase URL and anon key from: https://app.supabase.com → Your Project → Settings → API\n' +
+                            '2. Create a .env file in the project root with:\n' +
+                            '   VITE_SUPABASE_URL=https://your-project.supabase.co\n' +
+                            '   VITE_SUPABASE_ANON_KEY=your-anon-key-here\n' +
+                            '3. Restart the dev server (npm run dev)\n\n' +
+                            'Or run the seed script manually: npx tsx demo-magic-button.ts'
+                          );
+                        }
+                        
+                        // Test connection first
+                        const { error: testError } = await supabase.from('suppliers').select('count').limit(1);
+                        if (testError && testError.message.includes('Failed to fetch')) {
+                          throw new Error(
+                            'Cannot connect to Supabase. Check:\n' +
+                            '1. Your Supabase URL is correct\n' +
+                            '2. Your Supabase project is active\n' +
+                            '3. Your internet connection\n\n' +
+                            'Or run the seed script manually: npx tsx demo-magic-button.ts'
+                          );
+                        }
+                        
                         // Create basic seed data using anon key
                         const { data: newSuppliers, error: supplierError } = await supabase
                           .from('suppliers')
@@ -696,7 +725,7 @@ export function Login() {
                           .select();
                         
                         if (supplierError) {
-                          throw new Error(`Failed to create suppliers: ${supplierError.message}. You may need to run the seed script manually.`);
+                          throw new Error(`Failed to create suppliers: ${supplierError.message}\n\nIf this is a permissions error, you may need to run the seed script manually: npx tsx demo-magic-button.ts`);
                         }
 
                         // Create items
@@ -724,7 +753,8 @@ export function Login() {
                           window.location.reload();
                         }, 1000);
                       } catch (err: any) {
-                        setError(err.message || 'Failed to seed database. Please run the seed script manually: npx tsx demo-magic-button.ts');
+                        const errorMsg = err.message || 'Failed to seed database. Please run the seed script manually: npx tsx demo-magic-button.ts';
+                        setError(errorMsg);
                         logger.error('Seed error:', err);
                       } finally {
                         setLoading(false);
