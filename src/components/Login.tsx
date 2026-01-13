@@ -668,6 +668,81 @@ export function Login() {
               </div>
             </div>
 
+            {/* Seed Database Button - Show when database is empty */}
+            {suppliers.length === 0 && isDevMode && (
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <div className="bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/50 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-blue-100 mb-3">
+                    <strong>Database is empty.</strong> Seed it with demo data to get started.
+                  </p>
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        // Create basic seed data using anon key
+                        const { data: newSuppliers, error: supplierError } = await supabase
+                          .from('suppliers')
+                          .insert([
+                            { name: 'Fresh Farms Inc', email: 'supplier1@freshfarms.com' },
+                            { name: 'Organic Growers', email: 'supplier2@organicgrowers.com' },
+                            { name: 'Valley Fresh', email: 'supplier3@valleyfresh.com' },
+                            { name: 'Premium Produce', email: 'supplier4@premiumproduce.com' },
+                            { name: 'Coastal Berries', email: 'supplier5@coastalberries.com' },
+                            { name: 'Mountain Fresh', email: 'supplier6@mountainfresh.com' },
+                            { name: 'Sunset Farms', email: 'supplier7@sunsetfarms.com' },
+                            { name: 'Green Valley', email: 'supplier8@greenvalley.com' },
+                            { name: 'Berry Farms', email: 'contact@berryfarms.com' },
+                          ])
+                          .select();
+                        
+                        if (supplierError) {
+                          throw new Error(`Failed to create suppliers: ${supplierError.message}. You may need to run the seed script manually.`);
+                        }
+
+                        // Create items
+                        const { data: newItems, error: itemsError } = await supabase
+                          .from('items')
+                          .insert([
+                            { name: 'Strawberry', pack_size: '4×2 lb', category: 'strawberry', organic_flag: 'CONV', display_order: 1 },
+                            { name: 'Strawberry', pack_size: '8×1 lb', category: 'strawberry', organic_flag: 'ORG', display_order: 2 },
+                            { name: 'Blueberry', pack_size: '18 oz', category: 'blueberry', organic_flag: 'CONV', display_order: 3 },
+                            { name: 'Blueberry', pack_size: 'Pint', category: 'blueberry', organic_flag: 'ORG', display_order: 4 },
+                            { name: 'Blackberry', pack_size: '12ozx6', category: 'blackberry', organic_flag: 'CONV', display_order: 5 },
+                            { name: 'Blackberry', pack_size: '12ozx6', category: 'blackberry', organic_flag: 'ORG', display_order: 6 },
+                            { name: 'Raspberry', pack_size: '12ozx6', category: 'raspberry', organic_flag: 'CONV', display_order: 7 },
+                            { name: 'Raspberry', pack_size: '12ozx6', category: 'raspberry', organic_flag: 'ORG', display_order: 8 },
+                          ])
+                          .select();
+                        
+                        if (itemsError) {
+                          throw new Error(`Failed to create items: ${itemsError.message}`);
+                        }
+
+                        setError('');
+                        setSupplierError('Database seeded! Refreshing...');
+                        setTimeout(() => {
+                          window.location.reload();
+                        }, 1000);
+                      } catch (err: any) {
+                        setError(err.message || 'Failed to seed database. Please run the seed script manually: npx tsx demo-magic-button.ts');
+                        logger.error('Seed error:', err);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-blue-500 via-blue-600 to-cyan-500 text-white py-4 rounded-xl font-bold text-base hover:from-blue-600 hover:via-blue-700 hover:to-cyan-600 transition-all duration-300 shadow-xl hover:shadow-blue-500/50 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    {loading ? 'Seeding Database...' : 'Seed Database (9 Suppliers + 8 Items)'}
+                  </button>
+                  <p className="text-xs text-blue-200/70 mt-2 text-center">
+                    Or run: <code className="bg-blue-900/50 px-2 py-1 rounded">npx tsx demo-magic-button.ts</code>
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Footer */}
             <div className="mt-8 text-center">
               <p className="text-xs text-emerald-300/60 font-medium">
