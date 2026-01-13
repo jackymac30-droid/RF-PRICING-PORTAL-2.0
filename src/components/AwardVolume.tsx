@@ -264,28 +264,57 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
           }
         }
       }
-      // THIRD PROMPT FIX: Sandbox open for all quoted and finalized items
-      // Include all items that have quotes (quoted or finalized) - sandbox should show all
+      // FIX AWARD VOLUME: Show ALL items with finalized quotes (8 shippers on 8 SKUs)
+      // First get all berry items (8 SKUs)
       const uniqueItems = Array.from(dedupeMap.values())
       
-      // THIRD PROMPT FIX: Ensure all items with quotes are included in the sandbox
-      // Add any items from quotes that might not be in the filtered list
-      const quotedItemIds = new Set(quotesData.map(q => q.item_id))
-      const quotedItemsNotInList = itemsData.filter(item => 
-        quotedItemIds.has(item.id) && !uniqueItems.some(ui => ui.id === item.id)
+      // FIX AWARD VOLUME: Get ALL items that have finalized quotes (rf_final_fob) - these should all be in sandbox
+      const finalizedQuoteItemIds = new Set(
+        quotesData
+          .filter(q => q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)
+          .map(q => q.item_id)
       )
       
-      // Add quoted items to the list if they're not already there
-      const allItems = [...uniqueItems, ...quotedItemsNotInList]
+      // FIX AWARD VOLUME: Include ALL items with finalized quotes, even if not in filtered list
+      // This ensures all 8 SKUs with finalized pricing from 8 shippers are shown
+      const itemsWithFinalizedQuotes = itemsData.filter(item => 
+        finalizedQuoteItemIds.has(item.id) && 
+        berryCategories.includes(item.category?.toLowerCase() || '')
+      )
+      
+      // FIX AWARD VOLUME: Combine filtered berry items with items that have finalized quotes
+      // Deduplicate by ID
+      const allItemsMap = new Map<string, Item>()
+      uniqueItems.forEach(item => allItemsMap.set(item.id, item))
+      itemsWithFinalizedQuotes.forEach(item => {
+        if (!allItemsMap.has(item.id)) {
+          allItemsMap.set(item.id, item)
+        }
+      })
+      
+      const allItems = Array.from(allItemsMap.values())
       setItems(allItems)
       setQuotes(quotesData)
       
-      logger.debug('THIRD PROMPT FIX: Sandbox open for all quoted/finalized items', {
-        uniqueItems: uniqueItems.length,
-        quotedItemsNotInList: quotedItemsNotInList.length,
-        allItems: allItems.length,
-        quotesCount: quotesData.length
+      // FIX AWARD VOLUME: Log to verify we're showing finalized pricing from 8 shippers
+      const finalizedQuotesCount = quotesData.filter(q => q.rf_final_fob !== null && q.rf_final_fob > 0).length
+      const uniqueSuppliersWithFinalized = new Set(
+        quotesData
+          .filter(q => q.rf_final_fob !== null && q.rf_final_fob > 0)
+          .map(q => q.supplier_id)
+      ).size
+      
+      logger.debug('FIX AWARD VOLUME: Sandbox loaded with finalized pricing', {
+        totalItems: allItems.length,
+        finalizedQuotes: finalizedQuotesCount,
+        suppliersWithFinalized: uniqueSuppliersWithFinalized,
+        weekNumber: selectedWeek.week_number,
+        itemsWithFinalized: finalizedQuoteItemIds.size
       })
+      
+      if (typeof window !== 'undefined') {
+        console.log(`✅ FIX AWARD VOLUME: Week ${selectedWeek.week_number} - ${finalizedQuotesCount} finalized quotes from ${uniqueSuppliersWithFinalized} suppliers on ${finalizedQuoteItemIds.size} SKUs`)
+      }
 
       const needsMap = new Map<string, number>()
       const lockedSet = new Set<string>()
@@ -413,56 +442,43 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
     }
   }, selectedWeek ? { column: 'week_id', value: selectedWeek.id } : undefined)
 
-  // Quotes grouped by item_id, ONLY with valid pricing
-  // Use rf_final_fob if it exists (finalized), otherwise use supplier_fob (estimated)
-  // This allows plug-and-play: shows estimated when supplier submits, updates to finalized when pricing finalizes
-  // Also create a map of item_id -> normalized item_id for proper matching after normalization
+  // FIX AWARD VOLUME: Quotes grouped by item_id, ONLY with finalized pricing (rf_final_fob)
+  // This ensures sandbox shows finalized pricing from 8 shippers on 8 SKUs
   const pricedQuotesByItem = useMemo(() => {
     const m = new Map<string, QuoteWithDetails[]>()
-    // Create a map of all possible item IDs (for normalization matching)
-    const itemIdMap = new Map<string, string>()
-    for (const item of items) {
-      itemIdMap.set(item.id, item.id)
-      // Also handle normalization - match quotes by original item_id to normalized items
-      const itemNameLower = item.name.toLowerCase()
-      if (itemNameLower === 'strawberry' && (item.organic_flag === 'CONV' || !item.organic_flag)) {
-        const packLower = item.pack_size.toLowerCase().trim().replace(/\s+/g, '').replace(/×/g, 'x')
-        if (packLower.includes('4') && packLower.includes('2') && packLower.includes('lb') && !packLower.startsWith('2')) {
-          // This is the normalized 4×2 lb item - it should match quotes for any variant
-          // Keep the mapping but quotes will match by item_id directly
-        }
-      }
-    }
     
     for (const q of quotes) {
-      // FINAL NO-SQL FIX: Use finalized price (rf_final_fob) if available, otherwise use estimated (supplier_fob)
-      // This ensures finalized pricing from 8 suppliers shows up on award volume page
-      const price = (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)
-        ? safeNum(q.rf_final_fob, 0)
-        : safeNum(q.supplier_fob, 0)
-      if (price <= 0) continue
+      // FIX AWARD VOLUME: ONLY include quotes with finalized pricing (rf_final_fob)
+      // This ensures sandbox shows finalized pricing from 8 shippers
+      const hasFinalizedPrice = q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0
+      if (!hasFinalizedPrice) continue // Skip quotes without finalized pricing
       if (!q.item_id) continue
       
-      // Match by item_id directly (quotes reference items by ID, not by normalized pack_size)
+      // Match by item_id directly (quotes reference items by ID)
       const arr = m.get(q.item_id) || []
       arr.push(q)
       m.set(q.item_id, arr)
     }
+    
+    // FIX AWARD VOLUME: Sort by finalized price (rf_final_fob) - lowest first
     for (const [itemId, arr] of m.entries()) {
       arr.sort((a, b) => {
-        // Use finalized price if available, otherwise use estimated
-        const pa = (a.rf_final_fob !== null && a.rf_final_fob !== undefined && a.rf_final_fob > 0)
-          ? safeNum(a.rf_final_fob, 0)
-          : safeNum(a.supplier_fob, 0)
-        const pb = (b.rf_final_fob !== null && b.rf_final_fob !== undefined && b.rf_final_fob > 0)
-          ? safeNum(b.rf_final_fob, 0)
-          : safeNum(b.supplier_fob, 0)
+        const pa = safeNum(a.rf_final_fob, 0)
+        const pb = safeNum(b.rf_final_fob, 0)
         return pa - pb
       })
       m.set(itemId, arr)
     }
+    
+    // FIX AWARD VOLUME: Log to verify we have finalized quotes
+    if (typeof window !== 'undefined' && m.size > 0) {
+      const totalFinalizedQuotes = Array.from(m.values()).reduce((sum, arr) => sum + arr.length, 0)
+      const uniqueSuppliers = new Set(quotes.filter(q => q.rf_final_fob !== null && q.rf_final_fob > 0).map(q => q.supplier_id)).size
+      console.log(`✅ FIX AWARD VOLUME: pricedQuotesByItem - ${m.size} SKUs with ${totalFinalizedQuotes} finalized quotes from ${uniqueSuppliers} suppliers`)
+    }
+    
     return m
-  }, [quotes, items])
+  }, [quotes])
 
   // Show all items directly from database (already deduplicated by filterStandardSKUs)
   // Use items directly (they're already filtered and deduplicated correctly with organic_flag)
@@ -1114,7 +1130,7 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
                           <div className="mt-3 p-3 rounded-lg border border-emerald-400/20 bg-emerald-500/10">
                             <div className="text-xs text-white/70 font-semibold">DLVD (not editable)</div>
                             <div className="text-2xl font-black text-emerald-200 mt-1">{dlvd > 0 ? formatCurrency(dlvd) : '-'}</div>
-                            <div className="text-xs text-white/50 mt-1">DLVD = Weighted FOB + Freight + Margin − Rebate</div>
+                            <div className="text-xs text-white/50 mt-1">DLVD = Weighted FOB + Freight − Rebate</div>
                           </div>
                         </div>
 
