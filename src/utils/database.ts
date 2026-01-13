@@ -68,42 +68,51 @@ export async function fetchItems(): Promise<Item[]> {
 }
 
 export async function fetchWeeks(): Promise<Week[]> {
-  // NEXT-LEVEL FIX: ALL 8 WEEKS FORCED — KILLED ALL filters, limits, date conditions
-  // KILLED FILTER: Removed ALL WHERE clauses on dates, status, etc.
-  // KILLED LIMIT: Removed ALL .limit() and .range()
-  // Order by week_number ascending (1, 2, 3, ... 8) - NO date filters, NO limits
-  const { data, error } = await supabase
-    .from('weeks')
-    .select('*')
-    .order('week_number', { ascending: true });
-  
-  if (error) {
-    logger.error('Error fetching weeks:', error);
-    console.error('❌ NEXT-LEVEL FIX — Week fetch error:', error);
-    return [];
-  }
-  
-  // Null guard: return empty array if no data
-  if (!data || data.length === 0) {
-    logger.warn('No weeks found in database');
-    console.warn('⚠️  NEXT-LEVEL FIX — No weeks found. Run demo-magic-button.ts to seed.');
-    return [];
-  }
-  
-  // NEXT-LEVEL FIX: Debug log to verify all 8 weeks are fetched
-  const weekNumbers = data.map(w => w.week_number).sort((a, b) => a - b);
-  if (typeof window !== 'undefined') {
-    console.log(`✅ NEXT-LEVEL FIX — Fetched ALL weeks: [${weekNumbers.join(', ')}] (Total: ${data.length} weeks)`);
-    if (data.length !== 8) {
-      console.error(`❌ NEXT-LEVEL FIX — Expected 8 weeks, got ${data.length}. Weeks found: [${weekNumbers.join(', ')}]. Run demo-magic-button.ts to seed all 8 weeks.`);
-    } else {
-      console.log(`✅ NEXT-LEVEL FIX — All 8 weeks successfully fetched and visible!`);
+  try {
+    // FIXED LOADING HELL: ALL 8 WEEKS FORCED — KILLED ALL filters, limits, date conditions
+    // KILLED FILTER: Removed ALL WHERE clauses on dates, status, etc.
+    // KILLED LIMIT: Removed ALL .limit() and .range()
+    // Order by week_number ascending (1, 2, 3, ... 8) - NO date filters, NO limits
+    // FIXED LOADING HELL: Add timeout to prevent infinite loading
+    const { data, error } = await withTimeout(
+      supabase
+        .from('weeks')
+        .select('*')
+        .order('week_number', { ascending: true }),
+      5000
+    );
+    
+    if (error) {
+      logger.error('FIXED LOADING HELL: Error fetching weeks:', error);
+      console.error('❌ FIXED LOADING HELL — Week fetch error:', error);
+      return [];
     }
+    
+    // Null guard: return empty array if no data
+    if (!data || data.length === 0) {
+      logger.warn('FIXED LOADING HELL: No weeks found in database');
+      console.warn('⚠️  FIXED LOADING HELL — No weeks found. Run demo-magic-button.ts to seed.');
+      return [];
+    }
+    
+    // FIXED LOADING HELL: Debug log to verify all 8 weeks are fetched
+    const weekNumbers = data.map(w => w.week_number).sort((a, b) => a - b);
+    if (typeof window !== 'undefined') {
+      console.log(`✅ FIXED LOADING HELL — Fetched ALL weeks: [${weekNumbers.join(', ')}] (Total: ${data.length} weeks)`);
+      if (data.length !== 8) {
+        console.error(`❌ FIXED LOADING HELL — Expected 8 weeks, got ${data.length}. Weeks found: [${weekNumbers.join(', ')}]. Run demo-magic-button.ts to seed all 8 weeks.`);
+      } else {
+        console.log(`✅ FIXED LOADING HELL — All 8 weeks successfully fetched and visible!`);
+      }
+    }
+    logger.debug('FIXED LOADING HELL: All weeks fetched', { count: data.length, weekNumbers });
+    
+    return data;
+  } catch (err) {
+    console.error('❌ FIXED LOADING HELL: fetchWeeks failed:', err);
+    return [];
   }
-  logger.debug('All weeks fetched', { count: data.length, weekNumbers });
-  
-  return data;
-  // NEXT-LEVEL FIX — ALL 8 WEEKS FORCED
+  // FIXED LOADING HELL — ALL 8 WEEKS FORCED
   // KILLED ALL FILTERS: Removed .filter(), .slice(), .limit(), date WHERE clauses
   // KILLED ALL LIMITS: Removed .limit(), .range()
   // KILLED ALL DATE FILTERS: Removed .gte(), .lte(), .gt(), .lt() on dates
