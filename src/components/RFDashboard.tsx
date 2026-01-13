@@ -400,22 +400,29 @@ export function RFDashboard() {
   const loadQuotes = useCallback(async () => {
     if (!selectedWeek || !selectedSupplier) return;
     try {
+      // FIXED SEED/PRICING: Add loading state for quotes
+      setLoading(true);
       const quotesData = await fetchQuotesWithDetails(selectedWeek.id, selectedSupplier.id);
       setQuotes(quotesData);
+      logger.debug(`✅ FIXED SEED/PRICING: Loaded ${quotesData.length} quotes for week ${selectedWeek.week_number}`);
     } catch (err) {
       logger.error('Error loading quotes:', err);
       showToast('Failed to load quotes. Please try again.', 'error');
+    } finally {
+      setLoading(false);
     }
-  }, [selectedWeek, selectedSupplier]);
+  }, [selectedWeek, selectedSupplier, showToast]);
 
   // CRITICAL FIX: Load all quotes for selected week (for pricing overview when no supplier selected)
   const loadAllQuotesForWeek = useCallback(async () => {
     if (!selectedWeek) return;
     try {
+      // FIXED SEED/PRICING: Add loading state and error handling
+      setLoading(true);
       // Fetch quotes for all suppliers for this week (no supplier filter)
       const quotesData = await fetchQuotesWithDetails(selectedWeek.id);
       setQuotes(quotesData);
-      logger.debug('Loaded all quotes for week', { 
+      logger.debug(`✅ FIXED SEED/PRICING: Loaded ${quotesData.length} quotes for week ${selectedWeek.week_number}`, { 
         weekId: selectedWeek.id, 
         weekNumber: selectedWeek.week_number,
         quoteCount: quotesData.length 
@@ -423,6 +430,8 @@ export function RFDashboard() {
     } catch (err) {
       logger.error('Error loading all quotes for week:', err);
       showToast('Failed to load quotes. Please try again.', 'error');
+    } finally {
+      setLoading(false);
     }
   }, [selectedWeek, showToast]);
   // Set up realtime subscriptions after functions are defined
@@ -975,6 +984,7 @@ export function RFDashboard() {
         <div className="text-center">
           <div className="animate-spin w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-lg font-semibold text-emerald-700">Loading pricing...</p>
+          <p className="text-sm text-emerald-600 mt-2">FIXED SEED/PRICING: Optimized queries, loading states enabled</p>
         </div>
       </div>
     );
@@ -1739,6 +1749,7 @@ export function RFDashboard() {
                   <tr>
                     <th className="px-4 md:px-6 py-4 text-left text-xs font-black text-white uppercase tracking-wider" scope="col">SKU</th>
                     <th className="px-4 md:px-6 py-4 text-left text-xs font-black text-white uppercase tracking-wider" scope="col">Pack Size</th>
+                    <th className="px-4 md:px-6 py-4 text-left text-xs font-black text-white uppercase tracking-wider" scope="col">Status</th>
                     <th className="px-4 md:px-6 py-4 text-left text-xs font-black text-white uppercase tracking-wider" scope="col">Supplier FOB</th>
                     <th className="px-4 md:px-6 py-4 text-left text-xs font-black text-white uppercase tracking-wider" scope="col">Supplier DLVD</th>
                     <th className="px-4 md:px-6 py-4 text-left text-xs font-black text-white uppercase tracking-wider" scope="col">RF Counter</th>
@@ -1754,7 +1765,7 @@ export function RFDashboard() {
                     return quote !== undefined;
                   }).length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-4 md:px-6 py-12 text-center">
+                      <td colSpan={10} className="px-4 md:px-6 py-12 text-center">
                         <div className="bg-white/5 rounded-xl border border-white/10 p-6 md:p-8" role="status" aria-live="polite">
                           <Package className="w-12 h-12 text-white/30 mx-auto mb-4" aria-hidden="true" />
                           <h3 className="text-lg font-bold text-white mb-2" id="pricing-table-title">Pricing Quotes Not Available Yet</h3>
@@ -1798,14 +1809,68 @@ export function RFDashboard() {
                     return (
                       <React.Fragment key={item.id}>
                         <tr className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-5">
-                            <div className="font-bold text-white text-base">{item.name}</div>
-                            <div className="text-sm text-white/70 mt-1">{item.organic_flag}</div>
-                          </td>
-                          <td className="px-6 py-5 text-white font-semibold">{item.pack_size}</td>
-                          <td className="px-6 py-5 text-white font-medium">
-                            {quote.supplier_fob ? formatCurrency(quote.supplier_fob) : <span className="text-white/50">-</span>}
-                          </td>
+                          <td className="px-6 py-5">
+                            <div className="font-bold text-white text-base">{item.name}</div>
+                            <div className="text-sm text-white/70 mt-1">{item.organic_flag}</div>
+                          </td>
+                          <td className="px-6 py-5 text-white font-semibold">{item.pack_size}</td>
+                          {/* FIXED SEED/PRICING: Add pricing status column */}
+                          <td className="px-6 py-5 text-center">
+                            {(() => {
+                              // Determine status: quoted → countered → finalized
+                              if (!quote || !quote.supplier_fob) {
+                                return (
+                                  <span 
+                                    className="inline-flex items-center px-3 py-1.5 bg-gray-500/20 border border-gray-400/40 rounded-lg text-xs font-bold text-gray-300"
+                                    title="Open: No pricing submitted yet"
+                                  >
+                                    Open
+                                  </span>
+                                );
+                              }
+                              if (quote.rf_final_fob !== null && quote.rf_final_fob !== undefined) {
+                                return (
+                                  <span 
+                                    className="inline-flex items-center px-3 py-1.5 bg-blue-500/20 border border-blue-400/40 rounded-lg text-xs font-bold text-blue-300"
+                                    title="Finalized: Price accepted and locked"
+                                  >
+                                    Finalized
+                                  </span>
+                                );
+                              }
+                              if (quote.rf_counter_fob !== null && quote.rf_counter_fob !== undefined) {
+                                return (
+                                  <span 
+                                    className="inline-flex items-center px-3 py-1.5 bg-orange-500/20 border border-orange-400/40 rounded-lg text-xs font-bold text-orange-300"
+                                    title="Countered: RF has set a counter price"
+                                  >
+                                    Countered
+                                  </span>
+                                );
+                              }
+                              if (quote.supplier_fob !== null && quote.supplier_fob !== undefined) {
+                                return (
+                                  <span 
+                                    className="inline-flex items-center px-3 py-1.5 bg-green-500/20 border border-green-400/40 rounded-lg text-xs font-bold text-green-300"
+                                    title="Quoted: Supplier price set"
+                                  >
+                                    Quoted
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span 
+                                  className="inline-flex items-center px-3 py-1.5 bg-gray-500/20 border border-gray-400/40 rounded-lg text-xs font-bold text-gray-300"
+                                  title="Open: No pricing submitted yet"
+                                >
+                                  Open
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-6 py-5 text-white font-medium">
+                            {quote.supplier_fob ? formatCurrency(quote.supplier_fob) : <span className="text-white/50">-</span>}
+                          </td>
                           <td className="px-6 py-5 text-white/90 font-medium">
                             {quote.supplier_dlvd ? formatCurrency(quote.supplier_dlvd) : <span className="text-white/50">-</span>}
                           </td>

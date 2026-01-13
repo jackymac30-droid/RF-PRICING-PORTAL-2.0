@@ -540,7 +540,8 @@ async function main() {
     console.log('   Demo is ready for 100 people. Netlify auto-deploys.');
     console.log('   Hard refresh Netlify URL: Ctrl+Shift+R / Cmd+Shift+R\n');
     
-    // EVERYTHING FIXED — LAST PROMPT DONE
+    // SEED & PRICING FIXED — DEMO READY
+// FIXED SEED/PRICING: 8 SKUs, 5 suppliers, 8 weeks (1-7 finalized, 8 open), week 8 Berry Farms missing, all workflow columns set
 // FIXED SHIPPERS WORKFLOW: Weeks 1-7 have full workflow (quoted → countered → finalized), Week 8 has quoted only
 // SHIPPERS WORKFLOW FIXED — FAST & FINALIZED READY
 // FINAL SLOW/FLOW FIX: Weeks 1-7 ALL suppliers finalized, Week 8 has 8 finalized (Berry Farms missing)

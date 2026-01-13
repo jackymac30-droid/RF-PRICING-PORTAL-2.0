@@ -276,3 +276,8 @@ SELECT
    JOIN suppliers s ON q.supplier_id = s.id
    JOIN weeks w ON q.week_id = w.id
    WHERE w.week_number = 8 AND s.email = 'contact@berryfarms.com') as week8_berry_farms_quotes;
+
+-- ============================================
+-- SEED & PRICING FIXED — DEMO READY
+-- FIXED SEED/PRICING: Weeks 1-7 all suppliers finalized (rf_final_fob set), Week 8 missing Berry Farms quotes
+-- ============================================
