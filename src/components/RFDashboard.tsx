@@ -407,7 +407,8 @@ export function RFDashboard() {
       setLoading(false);
       setHasLoadedOnce(true); // FIXED LOADING HELL: Mark as loaded to prevent re-load loops
     }
-  }, [showToast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // FIXED LOADING HELL: Empty deps - don't recreate on every render, showToast is stable
   const loadQuotes = useCallback(async () => {
     if (!selectedWeek || !selectedSupplier) return;
     try {
