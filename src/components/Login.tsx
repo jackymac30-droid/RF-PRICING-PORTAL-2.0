@@ -668,8 +668,8 @@ export function Login() {
               </div>
             </div>
 
-            {/* Seed Database Button - Show when database is empty */}
-            {suppliers.length === 0 && isDevMode && (
+            {/* Seed Database Button - Show when database is empty OR when on localhost */}
+            {(suppliers.length === 0 || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) && isDevMode && (
               <div className="mt-6 pt-6 border-t border-white/10">
                 <div className="bg-blue-500/20 backdrop-blur-sm border-2 border-blue-400/50 rounded-xl p-4 mb-4">
                   <p className="text-sm text-blue-100 mb-3">
@@ -736,9 +736,16 @@ export function Login() {
                     <Sparkles className="w-5 h-5" />
                     {loading ? 'Seeding Database...' : 'Seed Database (9 Suppliers + 8 Items)'}
                   </button>
-                  <p className="text-xs text-blue-200/70 mt-2 text-center">
-                    Or run: <code className="bg-blue-900/50 px-2 py-1 rounded">npx tsx demo-magic-button.ts</code>
-                  </p>
+                  <div className="text-xs text-blue-200/70 mt-3 space-y-1">
+                    <p className="text-center font-semibold">⚠️ First Time Setup Required:</p>
+                    <ol className="text-left list-decimal list-inside space-y-1 ml-2">
+                      <li>Open <code className="bg-blue-900/50 px-1 py-0.5 rounded">.env</code> file in project root</li>
+                      <li>Replace placeholder values with your real Supabase credentials</li>
+                      <li>Get them from: Supabase Dashboard → Settings → API</li>
+                      <li>Restart dev server: <code className="bg-blue-900/50 px-1 py-0.5 rounded">npm run dev</code></li>
+                    </ol>
+                    <p className="text-center mt-2">Or run manually: <code className="bg-blue-900/50 px-2 py-1 rounded">npx tsx demo-magic-button.ts</code></p>
+                  </div>
                 </div>
               </div>
             )}
