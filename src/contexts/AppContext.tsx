@@ -22,13 +22,19 @@ function validateSession(session: Session | null): Session | null {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  // FIXED LOADING HELL: Defensive session loading - catch errors during initialization
   const [session, setSession] = useState<Session | null>(() => {
-    const loaded = loadSession();
-    const validated = validateSession(loaded);
-    if (!validated && loaded) {
-      saveSession(null);
+    try {
+      const loaded = loadSession();
+      const validated = validateSession(loaded);
+      if (!validated && loaded) {
+        saveSession(null);
+      }
+      return validated;
+    } catch (err) {
+      console.error('FIXED LOADING HELL: Error loading session:', err);
+      return null;
     }
-    return validated;
   });
 
   const login = (userId: string, userName: string, role: 'supplier' | 'rf', supplierId?: string) => {
@@ -54,8 +60,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveSession(null);
   };
 
+  // FIXED LOADING HELL: Always provide a valid context value
+  const contextValue = {
+    session,
+    login,
+    logout,
+  };
+
   return (
-    <AppContext.Provider value={{ session, login, logout }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

@@ -25,6 +25,7 @@ function AppContent() {
 }
 
 function App() {
+  // FIXED LOADING HELL: Ensure AppProvider wraps everything before any useApp calls
   return (
     <ErrorBoundary>
       <AppProvider>
