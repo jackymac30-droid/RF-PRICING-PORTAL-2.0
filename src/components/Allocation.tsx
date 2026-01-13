@@ -13,10 +13,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  Award, Save, Check, Package, Send, RefreshCw, 
-  Info, CheckCircle, Zap, Target, TrendingUp, AlertTriangle,
-  Sparkles, Brain, Sliders, XCircle, Edit3, ChevronDown, ChevronUp,
-  TrendingDown, DollarSign, BarChart3, History, Unlock, Lock
+  Award, Check, Package, Send, RefreshCw, 
+  Info, CheckCircle, Zap,
+  Sparkles, Brain, Sliders, Edit3, ChevronDown, ChevronUp,
+  History, Unlock, Lock
 } from 'lucide-react';
 import {
   fetchItems,
@@ -38,7 +38,7 @@ import { useApp } from '../contexts/AppContext';
 import { logger } from '../utils/logger';
 import { supabase } from '../utils/supabase';
 import type { Week, Item } from '../types';
-import { optimizeAllocation, calculateHistoricalShares, type SupplierQuote, type HistoricalShare } from '../utils/allocationOptimizer';
+import { optimizeAllocation, type SupplierQuote, type HistoricalShare } from '../utils/allocationOptimizer';
 
 interface AllocationEntry {
   quote_id: string;
@@ -182,7 +182,7 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
           // Filter for this SKU and calculate pricing insights
           const itemHistoricalQuotes = historicalQuotes
             .flat()
-            .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob > 0);
+            .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0);
           
           if (itemHistoricalQuotes.length > 0) {
             // Calculate average historical price
@@ -197,7 +197,7 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
             const weeklyTrends: Array<{ week: number; avgPrice: number }> = [];
             previousWeeks.forEach((week, weekIdx) => {
               const weekQuotes = historicalQuotes[weekIdx]
-                .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob > 0);
+                .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0);
               if (weekQuotes.length > 0) {
                 const weekAvg = weekQuotes.reduce((sum, q) => sum + (q.rf_final_fob ?? 0), 0) / weekQuotes.length; // FINAL WORKFLOW FIX: Handle undefined
                 weeklyTrends.push({ week: week.week_number, avgPrice: weekAvg });
@@ -232,9 +232,9 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
             const weekAverages: number[] = [];
             
             // Group by week to calculate weekly averages
-            previousWeeks.forEach((week, weekIdx) => {
+            previousWeeks.forEach((_week, weekIdx) => {
               const weekQuotes = historicalQuotes[weekIdx]
-                .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob > 0);
+                .filter(q => q.item_id === sku.item.id && q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0);
               
               if (weekQuotes.length > 0) {
                 const weekAvg = weekQuotes.reduce((sum, q) => sum + (q.rf_final_fob ?? 0), 0) / weekQuotes.length; // FINAL WORKFLOW FIX: Handle undefined
@@ -314,8 +314,8 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
     loadHistoricalData();
   }, [sku.item.id, sku.entries, sku.weightedAvgPrice, selectedWeek?.week_number, selectedWeek?.id]);
 
-  // Calculate fairness note
-  let fairnessNote = null;
+  // Calculate fairness note (unused but kept for future use)
+  // let fairnessNote = null;
   if (historicalShares.length > 0 && sku.volumeNeeded > 0) {
     const currentShares = new Map<string, number>();
     sku.entries.forEach(e => {
@@ -335,11 +335,12 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
         maxDev = dev;
         devSupplier = sku.entries.find(e => e.supplier_id === hist.supplierId)?.supplier_name || '';
         const direction = current < hist.sharePercent ? 'below' : 'above';
-        fairnessNote = {
-          supplier: devSupplier,
-          direction,
-          deviation: maxDev,
-        };
+        // fairnessNote unused but kept for future use
+        // fairnessNote = {
+        //   supplier: devSupplier,
+        //   direction,
+        //   deviation: maxDev,
+        // };
       }
     });
   }
@@ -347,11 +348,12 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
   // Generate smarter suggestions based on historical data
   let historicalSuggestion = null;
   let priceTrendNote = null;
-  let bestHistoricalSupplier = null;
+  let bestHistoricalSupplier: { supplierId: string; supplierName: string; avgPrice: number; winRate: number; priceVsAvg: number; consistency: number; reliability: number; avgVolume: number } | null = null;
   
   if (historicalPricing) {
-    const currentAvg = sku.weightedAvgPrice > 0 ? sku.weightedAvgPrice : 
-      sku.entries.reduce((sum, e) => sum + e.price, 0) / sku.entries.length;
+    // currentAvg unused but kept for future use
+    // const currentAvg = sku.weightedAvgPrice > 0 ? sku.weightedAvgPrice : 
+    //   sku.entries.reduce((sum, e) => sum + e.price, 0) / sku.entries.length;
     
     // Price trend insight - enhanced with momentum
     const trendChange = Math.abs(historicalPricing.priceChange) >= 2 ? historicalPricing.priceChange : 
@@ -378,40 +380,43 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
       bestHistoricalSupplier = sorted[0];
       
       // Check if this supplier is currently allocated
-      const currentEntry = sku.entries.find(e => e.supplier_id === bestHistoricalSupplier.supplierId);
-      const currentPrice = currentEntry?.price || 0;
-      const priceVsHistorical = bestHistoricalSupplier.avgPrice > 0 ? 
-        ((currentPrice - bestHistoricalSupplier.avgPrice) / bestHistoricalSupplier.avgPrice) * 100 : 0;
-      
-      if (currentEntry && gap > 0) {
-        // Suggest allocating more to historically best performer
-        const suggestedVolume = Math.min(50, gap);
-        const currentAllocated = currentEntry.awarded_volume || 0;
-        const newAllocated = currentAllocated + suggestedVolume;
-        const newTotalCost = sku.entries.reduce((sum, e) => {
-          if (e.supplier_id === bestHistoricalSupplier.supplierId) {
-            return sum + (e.price * newAllocated);
+      if (bestHistoricalSupplier) {
+        const currentEntry = sku.entries.find(e => e.supplier_id === bestHistoricalSupplier!.supplierId);
+        const currentPrice = currentEntry?.price || 0;
+        const priceVsHistorical = bestHistoricalSupplier.avgPrice > 0 ? 
+          ((currentPrice - bestHistoricalSupplier.avgPrice) / bestHistoricalSupplier.avgPrice) * 100 : 0;
+        
+        if (currentEntry && gap > 0) {
+          // Suggest allocating more to historically best performer
+          const suggestedVolume = Math.min(50, gap);
+          const currentAllocated = currentEntry.awarded_volume || 0;
+          const newAllocated = currentAllocated + suggestedVolume;
+          const newTotalCost = sku.entries.reduce((sum, e) => {
+            if (e.supplier_id === bestHistoricalSupplier!.supplierId) {
+              return sum + (e.price * newAllocated);
+            }
+            return sum + (e.price * e.awarded_volume);
+          }, 0);
+          const newAvg = (sku.totalAllocated + suggestedVolume) > 0 ? 
+            newTotalCost / (sku.totalAllocated + suggestedVolume) : 0;
+          const avgImpact = newAvg - sku.weightedAvgPrice;
+          
+          // Enhanced suggestion criteria: consider win rate, consistency, and reliability
+          const compositeScore = (bestHistoricalSupplier.winRate * 0.4) + 
+                                 (bestHistoricalSupplier.consistency * 0.3) + 
+                                 (bestHistoricalSupplier.reliability * 0.2);
+          
+          if (Math.abs(priceVsHistorical) < 5 && compositeScore >= 60) {
+            historicalSuggestion = {
+              supplier: bestHistoricalSupplier.supplierName,
+              cases: suggestedVolume,
+              reason: `Best performer: ${bestHistoricalSupplier.winRate.toFixed(0)}% wins, ${bestHistoricalSupplier.consistency.toFixed(0)}% consistent, ${bestHistoricalSupplier.reliability.toFixed(0)}% reliable`,
+              avgImpact: avgImpact,
+              priceVsHistorical: priceVsHistorical,
+            };
           }
-          return sum + (e.price * e.awarded_volume);
-        }, 0);
-        const newAvg = (sku.totalAllocated + suggestedVolume) > 0 ? 
-          newTotalCost / (sku.totalAllocated + suggestedVolume) : 0;
-        const avgImpact = newAvg - sku.weightedAvgPrice;
-        
-        // Enhanced suggestion criteria: consider win rate, consistency, and reliability
-        const compositeScore = (bestHistoricalSupplier.winRate * 0.4) + 
-                               (bestHistoricalSupplier.consistency * 0.3) + 
-                               (bestHistoricalSupplier.reliability * 0.2);
-        
-        if (Math.abs(priceVsHistorical) < 5 && compositeScore >= 60) {
-          historicalSuggestion = {
-            supplier: bestHistoricalSupplier.supplierName,
-            cases: suggestedVolume,
-            reason: `Best performer: ${bestHistoricalSupplier.winRate.toFixed(0)}% wins, ${bestHistoricalSupplier.consistency.toFixed(0)}% consistent, ${bestHistoricalSupplier.reliability.toFixed(0)}% reliable`,
-            avgImpact: avgImpact,
-            priceVsHistorical: priceVsHistorical,
-          };
         }
+      }
       }
     }
   }
