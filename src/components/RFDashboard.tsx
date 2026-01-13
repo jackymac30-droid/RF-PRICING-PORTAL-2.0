@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LogOut, ChevronDown, ChevronUp, TrendingUp, Award, Plus, Zap, Unlock, AlertTriangle, CheckCircle, CheckCircle2, DollarSign, BarChart3, Package, Mail, Clock, RefreshCw, Info, XCircle } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
