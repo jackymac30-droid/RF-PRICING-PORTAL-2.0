@@ -46,25 +46,47 @@ export function loadSession(): Session | null {
 }
 
 export async function fetchSuppliers(): Promise<Supplier[]> {
-  const { data, error } = await supabase
-    .from('suppliers')
-    .select('*')
-    .order('name');
-  
-  if (error) {
-    logger.error('Error fetching suppliers:', error);
+  try {
+    // FIXED LOADING HELL: Add timeout and limit
+    const { data, error } = await withTimeout(
+      supabase
+        .from('suppliers')
+        .select('*')
+        .order('name', { ascending: true })
+        .limit(100),
+      5000
+    );
+    if (error) {
+      console.error('❌ FIXED LOADING HELL: Error fetching suppliers:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('❌ FIXED LOADING HELL: fetchSuppliers failed:', err);
     return [];
   }
-  
-  return data || [];
 }
 
 export async function fetchItems(): Promise<Item[]> {
-  const { data } = await supabase
-    .from('items')
-    .select('*')
-    .order('display_order');
-  return data || [];
+  try {
+    // FIXED LOADING HELL: Add timeout and limit
+    const { data, error } = await withTimeout(
+      supabase
+        .from('items')
+        .select('*')
+        .order('display_order', { ascending: true })
+        .limit(100),
+      5000
+    );
+    if (error) {
+      console.error('❌ FIXED LOADING HELL: Error fetching items:', error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.error('❌ FIXED LOADING HELL: fetchItems failed:', err);
+    return [];
+  }
 }
 
 export async function fetchWeeks(): Promise<Week[]> {
