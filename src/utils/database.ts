@@ -267,10 +267,10 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
     const itemIds = [...new Set(quotesData.map(q => q.item_id))];
     const supplierIds = [...new Set(quotesData.map(q => q.supplier_id))];
     
-    // FIXED LOADING HELL: Add timeout to all parallel fetches
+    // WORLD-DEPENDS-ON-IT FIX: Add timeout to all parallel fetches - properly handle empty arrays
     const [itemsData, suppliersData, weekData] = await Promise.all([
-      itemIds.length > 0 ? withTimeout(supabase.from('items').select('id, name, pack_size, category, organic_flag, display_order').in('id', itemIds), 5000) : { data: [] },
-      supplierIds.length > 0 ? withTimeout(supabase.from('suppliers').select('id, name, email').in('id', supplierIds), 5000) : { data: [] },
+      itemIds.length > 0 ? withTimeout(supabase.from('items').select('id, name, pack_size, category, organic_flag, display_order').in('id', itemIds), 5000) : Promise.resolve({ data: [], error: null }),
+      supplierIds.length > 0 ? withTimeout(supabase.from('suppliers').select('id, name, email').in('id', supplierIds), 5000) : Promise.resolve({ data: [], error: null }),
       withTimeout(supabase.from('weeks').select('id, week_number, start_date, end_date, status, name, allocation_submitted').eq('id', weekId).maybeSingle(), 5000),
     ]);
     
