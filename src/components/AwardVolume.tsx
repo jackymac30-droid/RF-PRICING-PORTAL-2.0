@@ -163,22 +163,36 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
         }
       }
 
+      // FINAL NO-SQL FIX: Filter to only 8 berry SKUs (category: strawberry, blueberry, blackberry, raspberry)
+      const berryCategories = ['strawberry', 'blueberry', 'blackberry', 'raspberry'];
+      const berryItems = itemsData.filter(item => 
+        item.category && berryCategories.includes(item.category.toLowerCase())
+      );
+      
+      // FINAL NO-SQL FIX: Show finalized pricing (rf_final_fob) from all finalized suppliers
       // Filter items: Only show items that have pricing submitted (supplier_fob or rf_final_fob)
       const itemsWithPricing = new Set<string>()
       for (const q of quotesData) {
+        // FINAL NO-SQL FIX: Include quotes with rf_final_fob (finalized pricing) OR supplier_fob (submitted pricing)
         if ((q.supplier_fob !== null && q.supplier_fob !== undefined && q.supplier_fob > 0) ||
             (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)) {
           itemsWithPricing.add(q.item_id)
         }
       }
       
-      // Get all 8 standard SKUs first (always show all 8 SKUs)
-      const allStandardItems = filterStandardSKUs(itemsData)
+      // Get all 8 standard berry SKUs first (always show all 8 SKUs)
+      const allStandardItems = filterStandardSKUs(berryItems)
+      logger.debug('FINAL NO-SQL FIX: Filtered to berry SKUs only', { 
+        totalItems: itemsData.length, 
+        berryItems: berryItems.length, 
+        filtered: allStandardItems.length 
+      });
       
       // Then filter to items that have pricing for displaying quotes
       // But always include all 8 SKUs even if some don't have pricing yet
       const itemsWithPricingSet = new Set<string>()
       for (const q of quotesData) {
+        // FINAL NO-SQL FIX: Include quotes with rf_final_fob (finalized pricing) OR supplier_fob (submitted pricing)
         if ((q.supplier_fob !== null && q.supplier_fob !== undefined && q.supplier_fob > 0) ||
             (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)) {
           itemsWithPricingSet.add(q.item_id)
@@ -400,7 +414,8 @@ export function AwardVolume({ selectedWeek }: AwardVolumeProps) {
     }
     
     for (const q of quotes) {
-      // Use finalized price if available, otherwise use estimated (supplier_fob)
+      // FINAL NO-SQL FIX: Use finalized price (rf_final_fob) if available, otherwise use estimated (supplier_fob)
+      // This ensures finalized pricing from 8 suppliers shows up on award volume page
       const price = (q.rf_final_fob !== null && q.rf_final_fob !== undefined && q.rf_final_fob > 0)
         ? safeNum(q.rf_final_fob, 0)
         : safeNum(q.supplier_fob, 0)
@@ -1233,3 +1248,6 @@ function CalcField({ label, value, onChange }: { label: string; value: number; o
     </div>
   )
 }
+
+// NO MORE SQL — EVERYTHING FIXED IN CODE
+// FINAL NO-SQL FIX: Award volume page shows finalized pricing (rf_final_fob) from 8 finalized suppliers, filtered to only 8 berry SKUs

@@ -517,14 +517,24 @@ export function SupplierDashboard() {
   };
 
   // Suppliers should see all standard SKUs they can price
+  // FINAL NO-SQL FIX: Filter to only 8 berry SKUs (category: strawberry, blueberry, blackberry, raspberry)
   // When week is finalized/closed, they can still see items they submitted pricing for
   // Use standardized filtering to ensure same 8 SKUs across all components
   // MUST be before early returns to follow React hooks rules
   const itemsToShow = useMemo(() => {
-    // Always show all standard SKUs - suppliers can submit pricing for any of them
-    // If they've already submitted, they'll see their submitted prices
-    // If week is finalized, they'll see the final prices (rf_final_fob) if available
-    return filterStandardSKUs(items);
+    // FINAL NO-SQL FIX: First filter by berry categories only (8 SKUs: 2 strawberry, 2 blueberry, 2 blackberry, 2 raspberry)
+    const berryCategories = ['strawberry', 'blueberry', 'blackberry', 'raspberry'];
+    const berryItems = items.filter(item => 
+      item.category && berryCategories.includes(item.category.toLowerCase())
+    );
+    // Then use filterStandardSKUs to ensure normalization (e.g., 4x2lb -> 4×2 lb for strawberries)
+    const filtered = filterStandardSKUs(berryItems);
+    logger.debug('FINAL NO-SQL FIX: Filtered to berry SKUs only', { 
+      totalItems: items.length, 
+      berryItems: berryItems.length, 
+      filtered: filtered.length 
+    });
+    return filtered;
   }, [items, currentWeek?.status]);
 
   if (loading) {
