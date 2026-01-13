@@ -351,10 +351,6 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
   let bestHistoricalSupplier: { supplierId: string; supplierName: string; avgPrice: number; winRate: number; priceVsAvg: number; consistency: number; reliability: number; avgVolume: number } | null = null;
   
   if (historicalPricing) {
-    // currentAvg unused but kept for future use
-    // const currentAvg = sku.weightedAvgPrice > 0 ? sku.weightedAvgPrice : 
-    //   sku.entries.reduce((sum, e) => sum + e.price, 0) / sku.entries.length;
-    
     // Price trend insight - enhanced with momentum
     const trendChange = Math.abs(historicalPricing.priceChange) >= 2 ? historicalPricing.priceChange : 
                        Math.abs(historicalPricing.priceMomentum) >= 2 ? historicalPricing.priceMomentum : 0;
