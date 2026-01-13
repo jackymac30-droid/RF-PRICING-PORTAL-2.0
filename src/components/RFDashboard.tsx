@@ -404,6 +404,7 @@ export function RFDashboard() {
       console.error('❌ FIXED LOADING HELL: Dashboard load failed:', err);
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true); // FIXED LOADING HELL: Mark as loaded to prevent re-load loops
     }
   }, [showToast]);
   const loadQuotes = useCallback(async () => {
@@ -481,13 +482,19 @@ export function RFDashboard() {
     }
   }, [selectedWeek, selectedSupplier, loadWeekData, loadQuotes]);
  
-  useRealtime('quotes', handleRealtimeQuotes);
-  useRealtime('weeks', loadData);
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useRealtime('quotes', handleRealtimeQuotes);
+  useRealtime('weeks', loadData);
+  
+  // FIXED LOADING HELL: Load data only once on mount - prevent render loops
   useEffect(() => {
-    if (selectedWeek) {
+    if (!hasLoadedOnce) {
+      loadData();
+    }
+  }, []); // Empty deps - only run once on mount
+  
+  // FIXED LOADING HELL: Load week-specific data when week changes (prevent loops with proper deps)
+  useEffect(() => {
+    if (selectedWeek && hasLoadedOnce) {
       loadWeekData();
       loadVolumeNeeds();
       // CRITICAL FIX: Load quotes when week changes (even if no supplier selected)
@@ -497,7 +504,7 @@ export function RFDashboard() {
         loadQuotes();
       }
     }
-  }, [selectedWeek, selectedSupplier, loadWeekData, loadVolumeNeeds, loadAllQuotesForWeek, loadQuotes]);
+  }, [selectedWeek?.id, selectedSupplier?.id]); // Only depend on IDs, not functions
   async function loadVolumeNeeds() {
     if (!selectedWeek) return;
     try {

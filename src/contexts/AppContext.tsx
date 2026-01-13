@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
 import type { Session } from '../types';
 import { loadSession, saveSession } from '../utils/database';
 
@@ -60,12 +60,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveSession(null);
   };
 
-  // FIXED LOADING HELL: Always provide a valid context value
-  const contextValue = {
+  // FIXED LOADING HELL: Memoize context value to prevent unnecessary re-renders (fixes flickering)
+  const contextValue = useMemo(() => ({
     session,
     login,
     logout,
-  };
+  }), [session]);
 
   return (
     <AppContext.Provider value={contextValue}>
