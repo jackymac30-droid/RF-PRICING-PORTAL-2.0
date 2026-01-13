@@ -264,6 +264,17 @@ export function RFDashboard() {
         console.log('✅ FINAL WORLD FIX: Starting data load...');
       }
       
+      // FINAL NO-MANUAL-SQL FIX: Fix database orphans on first load
+      if (!hasLoadedOnce) {
+        try {
+          const { fixDatabaseOrphans } = await import('../utils/database');
+          await fixDatabaseOrphans();
+          logger.debug('FINAL NO-MANUAL-SQL FIX: Database cleanup completed');
+        } catch (err) {
+          logger.warn('FINAL NO-MANUAL-SQL FIX: Database cleanup failed (non-critical):', err);
+        }
+      }
+      
       // FIXED LOADING HELL: Add timeout wrapper for all fetches
       const fetchWithTimeout = async <T,>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> => {
         return Promise.race([

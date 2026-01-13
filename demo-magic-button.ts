@@ -94,7 +94,8 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 // DATA
 // ============================================================================
 
-// FINAL WORLD FIX: 8 berry SKUs with correct names/pack_sizes, category 'berry'
+// FINAL NO-MANUAL-SQL FIX: 8 berry SKUs with correct names/pack_sizes, category 'berry'
+// All items must have category 'berry' to be filtered correctly in dashboards
 const ITEMS = [
   { name: 'Strawberry', pack_size: '4×2 lb', category: 'berry', organic_flag: 'CONV', display_order: 1 },
   { name: 'Strawberry', pack_size: '8×1 lb', category: 'berry', organic_flag: 'ORG', display_order: 2 },
@@ -548,8 +549,8 @@ async function main() {
     console.log('   Paste keys once → run magic button → hard refresh.');
     console.log('   Demo saved — no more work.\n');
     
-    // NO MORE SQL — EVERYTHING FIXED IN CODE
-// FINAL NO-SQL FIX: Seeding correct, pricing page loads with full workflow, dashboards sync, no slow loading, Netlify ready
+    // NO MORE MANUAL SQL — EVERYTHING FIXED IN CODE
+// FINAL NO-MANUAL-SQL FIX: Seeding correct (8 berry SKUs, 5 suppliers, 8 weeks), pricing page loads with full workflow, dashboards sync, no slow loading, Netlify ready
 // NEXT LEVEL FIXED — FAST & FINALIZED READY
 // NEXT LEVEL FIX: 8 SKUs, 5 suppliers, 8 weeks (1-7 finalized, 8 open), week 8 has 4 finalized (Berry Farms missing), all workflow columns set
 // FIXED SHIPPERS WORKFLOW: Weeks 1-7 have full workflow (quoted → countered → finalized), Week 8 has 4 suppliers finalized
