@@ -158,16 +158,16 @@ BEGIN
           rf_final_fob_val := rf_counter_fob_val; -- Final = counter when accepted
           awarded_volume_val := 100 + FLOOR(RANDOM() * 900)::INTEGER;
         ELSIF week_rec.week_number = 8 THEN
-          -- FINAL SLOW/FLOW FIX: Week 8 - 8 suppliers finalized, 1 missing (Berry Farms)
-          -- For non-Berry Farms suppliers: finalized workflow
+          -- NEXT LEVEL FIX: Week 8 - 8 suppliers finalized (rf_final_fob set), 1 missing (Berry Farms)
+          -- For non-Berry Farms suppliers: finalized workflow - ensures allocation tab shows finalized FOB for 8/9 shippers
           IF supplier_rec.id != berry_farms_id THEN
             rf_counter_fob_val := ROUND((supplier_fob_val + (RANDOM() - 0.5) * 1.0)::numeric, 2);
             supplier_response_val := 'accept';
             supplier_revised_fob_val := NULL;
-            rf_final_fob_val := rf_counter_fob_val; -- Finalized for 8 suppliers
+            rf_final_fob_val := rf_counter_fob_val; -- NEXT LEVEL FIX: Finalized for 8 suppliers (Berry Farms missing)
             awarded_volume_val := 100 + FLOOR(RANDOM() * 900)::INTEGER;
           ELSE
-            -- Berry Farms: no quote (already skipped above)
+            -- Berry Farms: no quote (already skipped above) - intentional gap for demo
             rf_counter_fob_val := NULL;
             supplier_response_val := NULL;
             supplier_revised_fob_val := NULL;
@@ -278,6 +278,6 @@ SELECT
    WHERE w.week_number = 8 AND s.email = 'contact@berryfarms.com') as week8_berry_farms_quotes;
 
 -- ============================================
--- SEED & PRICING FIXED — DEMO READY
--- FIXED SEED/PRICING: Weeks 1-7 all suppliers finalized (rf_final_fob set), Week 8 missing Berry Farms quotes
+-- NEXT LEVEL FIXED — FAST & FINALIZED READY
+-- NEXT LEVEL FIX: Weeks 1-7 all suppliers finalized (rf_final_fob set), Week 8 has 8 finalized (Berry Farms missing)
 -- ============================================

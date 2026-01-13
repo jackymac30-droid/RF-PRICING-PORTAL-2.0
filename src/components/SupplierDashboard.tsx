@@ -410,15 +410,16 @@ export function SupplierDashboard() {
       logger.debug(`✓ Pricing submitted and finalized: ${data.length} quotes`);
       showToast(`${data.length} price(s) submitted successfully`, 'success');
       
-      // WORKFLOW FIX: Immediate workflow update - trigger allocation tab to open in RF dashboard
+      // NEXT LEVEL FIX: Immediate workflow update - trigger allocation tab to open in RF dashboard
       if (typeof window !== 'undefined') {
-        console.log('✅ WORKFLOW FIX: Shipper submitted pricing — allocation tab should open ✓');
-        // Dispatch event to trigger RF dashboard to open allocation tab
+        console.log('✅ NEXT LEVEL FIX: Shipper submitted pricing — allocation tab should open immediately ✓');
+        // Dispatch event to trigger RF dashboard to open allocation tab (AwardVolume/sandbox)
         window.dispatchEvent(new CustomEvent('pricing-submitted', {
           detail: { 
             weekId: currentWeek.id,
             supplierId: session.supplier_id,
-            quoteCount: data.length
+            quoteCount: data.length,
+            immediateRedirect: true // Flag for immediate redirect
           }
         }));
       }

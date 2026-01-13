@@ -188,8 +188,9 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
       console.time('Fetch quotes with details');
     }
     
-    // FINAL SLOW/FLOW FIX: Optimized query - fetch quotes first (fast), then join only if needed
+    // NEXT LEVEL FIX: Optimized query - fetch quotes first (fast), then join only if needed
     // Select only essential columns from quotes to reduce payload
+    // PERFORMANCE: Add indexes on quotes table: CREATE INDEX idx_quotes_week_id ON quotes(week_id); CREATE INDEX idx_quotes_supplier_id ON quotes(supplier_id);
     let quotesQuery = supabase
       .from('quotes')
       .select('id, week_id, item_id, supplier_id, supplier_fob, rf_counter_fob, supplier_response, supplier_revised_fob, rf_final_fob, awarded_volume, offered_volume, supplier_volume_response, supplier_volume_accepted, created_at, updated_at')
@@ -208,7 +209,8 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
       return [];
     }
     
-    // FINAL SLOW/FLOW FIX: Fetch related data in parallel (faster than joins)
+    // NEXT LEVEL FIX: Fetch related data in parallel (faster than joins)
+    // PERFORMANCE: Add indexes: CREATE INDEX idx_items_id ON items(id); CREATE INDEX idx_suppliers_id ON suppliers(id);
     const itemIds = [...new Set(quotesData.map(q => q.item_id))];
     const supplierIds = [...new Set(quotesData.map(q => q.supplier_id))];
     
@@ -231,7 +233,7 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
     
     if (typeof window !== 'undefined') {
       console.timeEnd('Fetch quotes with details');
-      console.log(`✅ FINAL SLOW/FLOW FIX: Fetched ${result.length} quotes with optimized parallel queries ✓`);
+      console.log(`✅ NEXT LEVEL FIX: Fetched ${result.length} quotes with optimized parallel queries ✓`);
     }
     
     return result;

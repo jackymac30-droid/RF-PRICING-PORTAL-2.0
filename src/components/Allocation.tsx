@@ -872,10 +872,14 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
   useEffect(() => {
     if (!selectedWeek) return;
     
-    // Listen for pricing finalized event
+    // NEXT LEVEL FIX: Listen for pricing finalized event - immediately update to show finalized FOB
     const handlePricingFinalized = (event: CustomEvent) => {
       if (event.detail?.weekId === selectedWeek.id) {
-        logger.debug('Pricing finalized event received, reloading allocation data to show final FOB');
+        logger.debug('NEXT LEVEL FIX: Pricing finalized event received, immediately reloading allocation data to show final FOB');
+        if (typeof window !== 'undefined') {
+          console.log('✅ NEXT LEVEL FIX: FOB finalized — allocation updating to final FOB ✓');
+        }
+        // Force immediate reload to show finalized FOB
         loadData();
       }
     };
@@ -2381,6 +2385,7 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
                       <div className="grid grid-cols-7 gap-2 md:gap-3 mb-3 px-2 overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
                         <div className="text-xs text-white/60 font-semibold min-w-[100px]">Supplier</div>
                         <div className="text-xs text-white/60 font-semibold text-right min-w-[70px]">FOB</div>
+                        <div className="text-xs text-white/60 font-semibold text-center min-w-[60px]">Status</div>
                         <div className="text-xs text-white/60 font-semibold text-right min-w-[80px]">Delivered</div>
                         <div className="text-xs text-white/60 font-semibold text-right min-w-[85px]">Margin/Case</div>
                         <div className="text-xs text-white/60 font-semibold text-right min-w-[80px]">Allocated</div>
@@ -2413,7 +2418,7 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
                                 'border-white/10'
                               }`}
                             >
-                              <div className="grid grid-cols-7 gap-2 md:gap-3 items-center overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                              <div className="grid grid-cols-8 gap-2 md:gap-3 items-center overflow-x-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
                                 {/* Supplier */}
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -2448,6 +2453,19 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
                                 {/* FOB Price */}
                                 <div className="text-right min-w-0">
                                   <div className="font-semibold text-white text-xs">{formatCurrency(entry.price)}</div>
+                                </div>
+
+                                {/* Status - NEXT LEVEL FIX: Show finalized status clearly */}
+                                <div className="text-center min-w-0">
+                                  {entry.isFinalized ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 bg-green-500/30 text-green-200 rounded text-[9px] font-bold" title="Finalized FOB price">
+                                      FINAL
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2 py-0.5 bg-yellow-500/30 text-yellow-200 rounded text-[9px] font-bold" title="Preliminary FOB price">
+                                      PRELIM
+                                    </span>
+                                  )}
                                 </div>
 
                                 {/* Delivered Price = FOB + Freight - Rebate + Margin (matches calculator) */}

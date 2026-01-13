@@ -76,19 +76,24 @@ export function RFDashboard() {
   const [allSuppliersFinalized, setAllSuppliersFinalized] = useState(false);
   const [resettingData, setResettingData] = useState(false);
   const [resettingWeek6, setResettingWeek6] = useState(false);
-  // WORKFLOW FIX: Listen for pricing submitted - auto-open allocation tab
+  // NEXT LEVEL FIX: Listen for pricing submitted - immediate redirect to allocation tab (sandbox/play area)
   useEffect(() => {
     const handlePricingSubmitted = (event: CustomEvent) => {
-      const { weekId } = event.detail || {};
+      const { weekId, immediateRedirect } = event.detail || {};
       if (weekId && selectedWeek?.id === weekId) {
-        logger.debug('Pricing submitted event received, opening allocation tab', { 
+        logger.debug('NEXT LEVEL FIX: Pricing submitted event received, immediately opening allocation tab', { 
           weekId,
-          currentView: mainView
+          currentView: mainView,
+          immediateRedirect
         });
-        // Open allocation tab (award_volume) to show estimated FOB
+        // NEXT LEVEL FIX: Immediate redirect to AwardVolume tab (sandbox/play area) to show estimated FOB
         if (mainView !== 'award_volume') {
           setMainView('award_volume');
           showToast('Pricing submitted - opened Allocation tab with estimated FOB', 'info');
+          // Force reload quotes to show latest pricing
+          setTimeout(() => {
+            loadAllQuotesForWeek();
+          }, 100);
         }
       }
     };
@@ -96,7 +101,7 @@ export function RFDashboard() {
     return () => {
       window.removeEventListener('pricing-submitted', handlePricingSubmitted as EventListener);
     };
-  }, [selectedWeek?.id, mainView, showToast]);
+  }, [selectedWeek?.id, mainView, showToast, loadAllQuotesForWeek]);
   
   // Listen for navigation to Volume Acceptance from Award Volume or supplier responses
   useEffect(() => {
@@ -935,12 +940,12 @@ export function RFDashboard() {
         await loadWeekData();
         await loadAllQuotesForWeek(); // Reload all quotes to refresh allocation view
         
-        // FINAL SLOW/FLOW FIX: Trigger realtime update for allocation component
+        // NEXT LEVEL FIX: Trigger realtime update for allocation component - shows finalized FOB immediately
         if (typeof window !== 'undefined') {
-          console.log('✅ FINAL SLOW/FLOW FIX: FOB finalized — allocation updated ✓');
-          // Dispatch event to trigger allocation refresh
+          console.log('✅ NEXT LEVEL FIX: FOB finalized — allocation updated to show finalized FOB immediately ✓');
+          // Dispatch event to trigger allocation refresh (updates from estimated to final FOB)
           window.dispatchEvent(new CustomEvent('pricing-finalized', {
-            detail: { weekId: selectedWeek.id }
+            detail: { weekId: selectedWeek.id, forceRefresh: true }
           }));
         }
         

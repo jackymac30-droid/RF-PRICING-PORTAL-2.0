@@ -345,16 +345,16 @@ async function seedEverything() {
           quoteData.rf_final_fob = quoteData.rf_counter_fob; // Final = counter when accepted
           quoteData.awarded_volume = 100 + Math.floor(Math.random() * 900); // Award volumes for finalized weeks
         } else if (weekNum === 8) {
-          // FINAL SLOW/FLOW FIX: Week 8 - 8 suppliers finalized, 1 missing (Berry Farms)
-          // For non-Berry Farms suppliers: finalized workflow
+          // NEXT LEVEL FIX: Week 8 - 8 suppliers finalized (rf_final_fob set), 1 missing (Berry Farms)
+          // For non-Berry Farms suppliers: finalized workflow - ensures allocation tab shows finalized FOB for 8/9 shippers
           if (email !== berryFarmsEmail) {
             const counterAdjustment = -0.30 + Math.random() * 0.60;
             quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
             quoteData.supplier_response = 'accept';
-            quoteData.rf_final_fob = quoteData.rf_counter_fob; // Finalized for 8 suppliers
+            quoteData.rf_final_fob = quoteData.rf_counter_fob; // NEXT LEVEL FIX: Finalized for 8 suppliers (Berry Farms missing)
             quoteData.awarded_volume = 100 + Math.floor(Math.random() * 900);
           }
-          // Berry Farms: no quote (already skipped above)
+          // Berry Farms: no quote (already skipped above) - intentional gap for demo
         }
         
         weekQuotes.push(quoteData);
@@ -540,8 +540,8 @@ async function main() {
     console.log('   Demo is ready for 100 people. Netlify auto-deploys.');
     console.log('   Hard refresh Netlify URL: Ctrl+Shift+R / Cmd+Shift+R\n');
     
-    // SEED & PRICING FIXED — DEMO READY
-// FIXED SEED/PRICING: 8 SKUs, 5 suppliers, 8 weeks (1-7 finalized, 8 open), week 8 Berry Farms missing, all workflow columns set
+    // NEXT LEVEL FIXED — FAST & FINALIZED READY
+// NEXT LEVEL FIX: 8 SKUs, 5 suppliers, 8 weeks (1-7 finalized, 8 open), week 8 has 8 finalized (Berry Farms missing), all workflow columns set
 // FIXED SHIPPERS WORKFLOW: Weeks 1-7 have full workflow (quoted → countered → finalized), Week 8 has quoted only
 // SHIPPERS WORKFLOW FIXED — FAST & FINALIZED READY
 // FINAL SLOW/FLOW FIX: Weeks 1-7 ALL suppliers finalized, Week 8 has 8 finalized (Berry Farms missing)
