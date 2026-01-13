@@ -333,26 +333,31 @@ async function seedEverything() {
           supplier_fob: supplierFOB,
         };
         
+        // FINAL WORLD FIX: Match exact workflow - weeks 1-7 all finalized, week 8 4 suppliers finalized (Berry Farms missing)
         if (weekNum <= 7) {
-          // FINAL SLOW/FLOW FIX: Weeks 1-7 finalized - ALL suppliers finalized (rf_final_fob set)
+          // FINAL WORLD FIX: Weeks 1-7 finalized - ALL 5 suppliers finalized (rf_final_fob set)
           // Full workflow: quoted → countered → finalized for ALL suppliers
           const counterAdjustment = -0.30 + Math.random() * 0.60; // RF counters slightly lower
           quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
           
-          // FINAL SLOW/FLOW FIX: Ensure ALL suppliers are finalized (no declined for weeks 1-7)
+          // FINAL WORLD FIX: Ensure ALL suppliers are finalized (no declined for weeks 1-7)
           // Supplier accepts counter (all cases for finalized weeks)
           quoteData.supplier_response = 'accept';
           quoteData.rf_final_fob = quoteData.rf_counter_fob; // Final = counter when accepted
           quoteData.awarded_volume = 100 + Math.floor(Math.random() * 900); // Award volumes for finalized weeks
+          quoteData.offered_volume = quoteData.awarded_volume; // Set offered_volume for finalized weeks
+          quoteData.supplier_volume_response = 'accept'; // Supplier accepted volume
+          quoteData.supplier_volume_accepted = quoteData.awarded_volume; // Accepted volume matches awarded
         } else if (weekNum === 8) {
-          // NEXT LEVEL FIX: Week 8 - 8 suppliers finalized (rf_final_fob set), 1 missing (Berry Farms)
-          // For non-Berry Farms suppliers: finalized workflow - ensures allocation tab shows finalized FOB for 8/9 shippers
+          // FINAL WORLD FIX: Week 8 - 4 suppliers finalized (rf_final_fob set), Berry Farms missing (no quote row)
+          // For non-Berry Farms suppliers: finalized workflow - ensures allocation tab shows finalized FOB for 4/5 shippers
           if (email !== berryFarmsEmail) {
             const counterAdjustment = -0.30 + Math.random() * 0.60;
             quoteData.rf_counter_fob = Math.round((supplierFOB + counterAdjustment) * 100) / 100;
             quoteData.supplier_response = 'accept';
-            quoteData.rf_final_fob = quoteData.rf_counter_fob; // NEXT LEVEL FIX: Finalized for 8 suppliers (Berry Farms missing)
+            quoteData.rf_final_fob = quoteData.rf_counter_fob; // FINAL WORLD FIX: Finalized for 4 suppliers (Berry Farms missing)
             quoteData.awarded_volume = 100 + Math.floor(Math.random() * 900);
+            // Week 8: Don't set offered_volume or supplier responses yet (still in pricing phase)
           }
           // Berry Farms: no quote (already skipped above) - intentional gap for demo
         }
