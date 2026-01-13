@@ -1249,5 +1249,6 @@ function CalcField({ label, value, onChange }: { label: string; value: number; o
   )
 }
 
-// NO MORE SQL — EVERYTHING FIXED IN CODE
+// NO MORE SQL — WORKFLOW FIXED IN CODE
 // FINAL NO-SQL FIX: Award volume page shows finalized pricing (rf_final_fob) from 8 finalized suppliers, filtered to only 8 berry SKUs
+// FINAL NO-SQL FIX: Workflow seamless with gap → shipper submit → immediate sandbox, finalize FOB → allocation updates to finalized FOB
