@@ -162,15 +162,14 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
         // Fetch historical pricing from last 8-10 weeks for deeper analysis
         const { fetchWeeks, fetchQuotesWithDetails } = await import('../utils/database');
         
-        // Get last 10 weeks (finalized or closed) for comprehensive analysis
+        // NEXT-LEVEL FIX: KILLED FILTER - Removed status filter and .slice() limit
+        // Get ALL previous weeks (not just finalized/closed) for comprehensive analysis
         const allWeeks = await fetchWeeks();
+        // KILLED FILTER: Removed .filter(w => w.status === 'finalized' || w.status === 'closed')
+        // KILLED SLICE: Removed .slice(0, 10) - use ALL previous weeks
         const previousWeeks = allWeeks
-          .filter(w => 
-            (w.status === 'finalized' || w.status === 'closed') &&
-            w.week_number < selectedWeek.week_number
-          )
-          .sort((a, b) => b.week_number - a.week_number)
-          .slice(0, 10); // Last 10 weeks for deeper insights
+          .filter(w => w.week_number < selectedWeek.week_number) // Only filter by week_number, not status
+          .sort((a, b) => b.week_number - a.week_number); // Show all previous weeks, no limit
         
         if (previousWeeks.length > 0) {
           // Fetch quotes for last 2 weeks
@@ -594,23 +593,23 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
 
     setLoading(true);
     try {
+      if (typeof window !== 'undefined') {
+        console.time('Load allocation data');
+      }
+      
+      // FINAL SLOW/FLOW FIX: Optimized parallel fetching
       // Check database status directly (not just prop)
       const { supabase } = await import('../utils/supabase');
-      const { data: weekData } = await supabase
-        .from('weeks')
-        .select('status')
-        .eq('id', selectedWeek.id)
-        .single();
-      
-      const dbStatus = weekData?.status || selectedWeek.status;
-      setActualWeekStatus(dbStatus);
-
-      const [itemsData, quotes, volumeNeedsData, pricingData] = await Promise.all([
+      const [weekDataResult, itemsData, quotes, volumeNeedsData, pricingData] = await Promise.all([
+        supabase.from('weeks').select('status').eq('id', selectedWeek.id).single(),
         fetchItems(),
         fetchQuotesWithDetails(selectedWeek.id),
         fetchVolumeNeeds(selectedWeek.id),
         fetchItemPricingCalculations(selectedWeek.id),
       ]);
+      
+      const dbStatus = weekDataResult.data?.status || selectedWeek.status;
+      setActualWeekStatus(dbStatus);
 
       // Check if there are any quotes with finalized pricing (rf_final_fob)
       // This is required for volume allocation - allows access even if week status is still 'open'
@@ -746,7 +745,8 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
 
         const entries: AllocationEntry[] = [];
         for (const quote of itemQuotes) {
-          // Use finalized FOB if available, otherwise use preliminary supplier_fob
+          // WORKFLOW FIX: Use finalized FOB (rf_final_fob) if available, otherwise use estimated FOB (supplier_fob)
+          // This ensures allocation shows estimated FOB when pricing is submitted, then updates to final FOB when finalized
           const isFinalized = quote.rf_final_fob !== null && quote.rf_final_fob > 0;
           const price = isFinalized ? quote.rf_final_fob! : (quote.supplier_fob || 0);
           
@@ -867,6 +867,55 @@ export function Allocation({ selectedWeek, onWeekUpdate }: AllocationProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedWeek?.id, selectedWeek?.status, selectedWeek?.allocation_submitted]);
+  
+  // WORKFLOW FIX: Realtime subscription for pricing updates - shows estimated FOB initially, then final FOB when finalized
+  useEffect(() => {
+    if (!selectedWeek) return;
+    
+    // Listen for pricing finalized event
+    const handlePricingFinalized = (event: CustomEvent) => {
+      if (event.detail?.weekId === selectedWeek.id) {
+        logger.debug('Pricing finalized event received, reloading allocation data to show final FOB');
+        loadData();
+      }
+    };
+    
+    window.addEventListener('pricing-finalized', handlePricingFinalized as EventListener);
+    
+    // WORKFLOW FIX: Realtime subscription for rf_final_fob updates - updates allocation to show final FOB
+    const channel = supabase
+      .channel(`allocation-quotes-${selectedWeek.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'quotes',
+          filter: `week_id=eq.${selectedWeek.id}`,
+        },
+        (payload: any) => {
+          // Check if rf_final_fob was updated (pricing finalized)
+          if (payload.new?.rf_final_fob !== payload.old?.rf_final_fob && payload.new?.rf_final_fob) {
+            logger.debug('rf_final_fob updated via realtime - pricing finalized, updating allocation to show final FOB');
+            if (typeof window !== 'undefined') {
+              console.log('✅ WORKFLOW FIX: FOB finalized — allocation updated to final FOB ✓');
+            }
+            loadData();
+          }
+          // Also check if supplier_fob was just set (pricing submitted) - show estimated FOB
+          if (payload.new?.supplier_fob !== payload.old?.supplier_fob && payload.new?.supplier_fob && !payload.old?.supplier_fob) {
+            logger.debug('supplier_fob set via realtime - pricing submitted, showing estimated FOB');
+            loadData();
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      window.removeEventListener('pricing-finalized', handlePricingFinalized as EventListener);
+      supabase.removeChannel(channel);
+    };
+  }, [selectedWeek?.id, loadData]);
   
   // Realtime subscription: Refresh when quotes are updated (rf_final_fob set OR supplier volume responses)
   useEffect(() => {

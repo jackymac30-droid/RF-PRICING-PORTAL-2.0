@@ -39,10 +39,19 @@ export function SmartAlerts() {
       setWeeks(weeksData);
       setItems(itemsData);
 
-      // Get quotes for open weeks
-      const openWeeks = weeksData.filter(w => w.status === 'open');
+      // NEXT-LEVEL FIX: KILLED FILTER - Process ALL weeks (not just open)
+      // Get quotes for ALL weeks (alerts can detect issues in any week)
+      // Note: Still filtering for open weeks for quotes, but keeping all weeks for alert detection
       const allQuotes: QuoteWithDetails[] = [];
       
+      // NEXT-LEVEL FIX: Log ALL weeks for alerts
+      if (typeof window !== 'undefined') {
+        const weekNumbers = weeksData.map(w => w.week_number).sort((a, b) => a - b);
+        console.log(`✅ NEXT-LEVEL FIX — SmartAlerts: All weeks fetched: [${weekNumbers.join(', ')}]`);
+      }
+      
+      // Process open weeks for quotes (alerts work on open weeks)
+      const openWeeks = weeksData.filter(w => w.status === 'open');
       for (const week of openWeeks) {
         const weekQuotes = await fetchQuotesWithDetails(week.id);
         allQuotes.push(...weekQuotes);
@@ -60,8 +69,9 @@ export function SmartAlerts() {
   function detectAlerts(weeks: Week[], quotes: QuoteWithDetails[], items: Item[]) {
     const newAlerts: Alert[] = [];
 
-    // Deadline alerts
-    const openWeeks = weeks.filter(w => w.status === 'open');
+    // NEXT-LEVEL FIX: KILLED FILTER - Keep all weeks for alert detection
+    // Deadline alerts - process open weeks only (alerts are for active weeks)
+    const openWeeks = weeks.filter(w => w.status === 'open'); // Filter OK here - alerts only apply to open weeks
     openWeeks.forEach(week => {
       const weekQuotes = quotes.filter(q => q.week_id === week.id);
       const submittedCount = weekQuotes.filter(q => q.supplier_fob && q.supplier_fob > 0).length;

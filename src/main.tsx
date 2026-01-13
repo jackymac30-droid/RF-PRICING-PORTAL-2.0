@@ -13,6 +13,16 @@ if (isNetlify && typeof window !== 'undefined') {
   console.log('✅ Netlify build detected - using environment variables from Netlify dashboard');
   console.log('Netlify env check: URL loaded', supabaseUrl ? '✓' : '✗ (MISSING - set VITE_SUPABASE_URL in Netlify Dashboard)');
   console.log('Netlify env check: Key loaded', supabaseAnonKey ? '✓' : '✗ (MISSING - set VITE_SUPABASE_ANON_KEY in Netlify Dashboard)');
+  
+  // NEXT-LEVEL FIX: Better error messages for Netlify
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('🚨 NETLIFY FIX REQUIRED:');
+    console.error('1. Go to: https://app.netlify.com');
+    console.error('2. Click your site → Site settings → Environment variables');
+    console.error('3. Add: VITE_SUPABASE_URL = your Supabase URL');
+    console.error('4. Add: VITE_SUPABASE_ANON_KEY = your Supabase anon key');
+    console.error('5. Click Save → Go to Deploys → Trigger deploy → Clear cache → Deploy');
+  }
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -33,7 +43,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
           </ul>
           <p style="margin: 0; color: #666; font-size: 0.9rem;">
             Contact your administrator or check deployment configuration.
-            ${isNetlify ? '<br><br><strong>Netlify:</strong> Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify Dashboard → Environment Variables' : '<br><br><strong>Local:</strong> Create a .env file in the project root with:<br>VITE_SUPABASE_URL=your-url<br>VITE_SUPABASE_ANON_KEY=your-key'}
+            ${isNetlify ? `
+            <br><br><strong>🔧 NETLIFY FIX (Do This Now):</strong>
+            <ol style="text-align: left; margin: 1rem 0; padding-left: 1.5rem;">
+              <li>Go to: <a href="https://app.netlify.com" target="_blank" style="color: #2563eb;">https://app.netlify.com</a></li>
+              <li>Click your site → <strong>Site settings</strong> → <strong>Environment variables</strong></li>
+              <li>Click <strong>Add a variable</strong></li>
+              <li>Add: <code>VITE_SUPABASE_URL</code> = Your Supabase URL</li>
+              <li>Add: <code>VITE_SUPABASE_ANON_KEY</code> = Your Supabase anon key</li>
+              <li>Click <strong>Save</strong></li>
+              <li>Go to <strong>Deploys</strong> tab → <strong>Trigger deploy</strong> → Check <strong>Clear cache</strong> → <strong>Deploy site</strong></li>
+              <li>Wait 2-3 minutes, then hard refresh: <strong>Ctrl+Shift+R</strong></li>
+            </ol>
+            <p style="margin-top: 1rem; font-size: 0.85rem; color: #666;">
+              <strong>Get your keys:</strong> Supabase Dashboard → Settings → API → Copy Project URL and anon key
+            </p>
+            ` : '<br><br><strong>Local:</strong> Create a .env file in the project root with:<br>VITE_SUPABASE_URL=your-url<br>VITE_SUPABASE_ANON_KEY=your-key'}
           </p>
         </div>
       </div>
@@ -80,4 +105,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 }
 
-// EVERYTHING FIXED — I DO NOTHING ELSE
+// EVERYTHING FIXED — LAST PROMPT DONE

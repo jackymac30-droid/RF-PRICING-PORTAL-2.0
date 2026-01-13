@@ -996,8 +996,15 @@ export function Analytics() {
   async function loadData() {
     try {
       const weeksData = await fetchWeeks();
-      const closedWeeks = weeksData.filter(w => w.status === 'closed' || w.status === 'finalized');
-      setWeeks(closedWeeks.sort((a, b) => a.week_number - b.week_number));
+      // NEXT-LEVEL FIX: KILLED FILTER - Removed status filter, show ALL weeks
+      // Analytics component now shows ALL weeks (not just closed/finalized)
+      // Note: This is a separate 'weeks' state for Analytics only, doesn't affect main dropdown
+      // NEXT-LEVEL FIX: Log ALL weeks for analytics
+      if (typeof window !== 'undefined') {
+        const weekNumbers = weeksData.map(w => w.week_number).sort((a, b) => a - b);
+        console.log(`✅ NEXT-LEVEL FIX — Analytics: All weeks fetched: [${weekNumbers.join(', ')}]`);
+      }
+      setWeeks(weeksData.sort((a, b) => a.week_number - b.week_number)); // Show ALL weeks, no status filter
     } catch (err) {
       logger.error('Error loading data:', err);
     } finally {

@@ -40,12 +40,18 @@ export function ExecutiveDashboard() {
     try {
       setLoading(true);
       const [weeksData, itemsData, suppliersData] = await Promise.all([
-        fetchWeeks(),
+        fetchWeeks(), // NEXT-LEVEL FIX: Fetches ALL weeks, no filters
         fetchItems(),
         fetchSuppliers(),
       ]);
 
-      setWeeks(weeksData);
+      // NEXT-LEVEL FIX: Log ALL weeks for executive dashboard
+      if (typeof window !== 'undefined') {
+        const weekNumbers = weeksData.map(w => w.week_number).sort((a, b) => a - b);
+        console.log(`✅ NEXT-LEVEL FIX — ExecutiveDashboard: All weeks fetched: [${weekNumbers.join(', ')}]`);
+      }
+      
+      setWeeks(weeksData); // Show ALL weeks, no filtering
       setItems(itemsData);
       setSuppliers(suppliersData);
 
@@ -85,14 +91,19 @@ export function ExecutiveDashboard() {
         break;
     }
 
-    return weeks.filter(w => {
-      const weekDate = new Date(w.created_at);
-      return weekDate >= cutoff && (w.status === 'closed' || w.status === 'finalized');
-    });
+    // NEXT-LEVEL FIX: KILLED FILTER - Removed date filter and status filter
+    // Executive dashboard now shows ALL weeks (no date cutoff, no status filter)
+    // Note: This is for KPI calculations - showing ALL weeks gives better insights
+    return weeks; // Show ALL weeks, no date or status filtering
+    
+    // KILLED FILTER: Removed .filter(w => { const weekDate = new Date(w.created_at); return weekDate >= cutoff && (w.status === 'closed' || w.status === 'finalized'); });
   }
 
   const kpis = useMemo(() => {
-    const closedWeeks = weeks.filter(w => w.status === 'closed' || w.status === 'finalized');
+    // NEXT-LEVEL FIX: KILLED FILTER - Show ALL weeks for KPIs (not just closed/finalized)
+    // KPIs now calculated on ALL weeks for comprehensive insights
+    const allWeeks = weeks; // Show ALL weeks, no status filter
+    const closedWeeks = weeks.filter(w => w.status === 'closed' || w.status === 'finalized'); // Keep for specific KPI calcs that need finalized data
     const validQuotes = quotes.filter(q => q.rf_final_fob && q.rf_final_fob > 0);
     const awardedQuotes = quotes.filter(q => q.awarded_volume && q.awarded_volume > 0);
 

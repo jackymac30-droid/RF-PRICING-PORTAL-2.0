@@ -58,10 +58,24 @@ If your app still shows empty data after seeding, run `seed-demo-rls-access.sql`
 
 **After demo, re-enable RLS** (uncomment the ENABLE lines and run again)
 
-### 5. Hard Refresh Browser
+### 5. Hard Refresh Browser (CRITICAL)
+
+**After seeding, you MUST hard refresh to see the data:**
 
 - Windows/Linux: `Ctrl + Shift + R`
 - Mac: `Cmd + Shift + R`
+
+**Or clear cache manually:**
+- Chrome: Settings → Privacy → Clear browsing data → Cached images and files
+- Firefox: Settings → Privacy → Clear Data → Cached Web Content
+- Safari: Develop → Empty Caches (Cmd+Option+E)
+
+**If Netlify shows old version:**
+1. Go to Netlify Dashboard → Deploys → "Trigger deploy"
+2. Check "Clear cache and deploy site"
+3. Click "Deploy site"
+4. Wait 2-3 minutes
+5. Hard refresh: `Ctrl+Shift+R` / `Cmd+Shift+R`
 
 ## What Gets Created
 
@@ -220,7 +234,9 @@ If your app still shows empty data after seeding, run `seed-demo-rls-access.sql`
 
 Your site will be at: `https://your-site.netlify.app`
 
-**After seeding with demo-magic-button.ts (run locally), hard refresh your Netlify URL to see the demo data.**
+**After seeding with demo-magic-button.ts (run locally), hard refresh your Netlify URL: `Ctrl+Shift+R` / `Cmd+Shift+R`**
+
+**CRITICAL:** If you don't hard refresh, you'll see old cached data. Always hard refresh after seeding.
 
 ### Troubleshooting Netlify:
 
@@ -256,12 +272,18 @@ After push: Netlify auto-deploys — trigger manual deploy if old version shows.
 
 ## Demo Checklist (Day Of)
 
-1. ✅ Run seed script (if needed)
-2. ✅ Verify data (`npx tsx scripts/verify-demo.ts`)
-3. ✅ Test app loads correctly
-4. ✅ Test week 8 shows Berry Farms gap
-5. ✅ Test lock/unlock works
-6. ✅ Test send allocations enables
-7. ✅ Test acceptance tab updates
-8. ✅ Push to GitHub
-9. ✅ Ready! 🎉
+1. ✅ Run seed script: `npx tsx demo-magic-button.ts` (if needed)
+2. ✅ Verify data: Check console output shows "READY FOR DEMO: YES"
+3. ✅ **Hard refresh Netlify URL**: `Ctrl+Shift+R` / `Cmd+Shift+R` (CRITICAL!)
+4. ✅ Test app loads correctly (opens on login/home page)
+5. ✅ Login as RF Manager → Dashboard defaults to week 8
+6. ✅ Verify all 8 weeks visible in week selector
+7. ✅ Test week 8 shows Berry Farms gap (missing quotes)
+8. ✅ Test lock/unlock works and persists on refresh
+9. ✅ Test send allocations enables when ready
+10. ✅ Test acceptance tab updates with supplier responses
+11. ✅ Test finalize works
+12. ✅ Push to GitHub (if changes made)
+13. ✅ Ready! 🎉
+
+**IMPORTANT:** Always hard refresh (`Ctrl+Shift+R` / `Cmd+Shift+R`) after seeding or deploying!
