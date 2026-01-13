@@ -3,15 +3,27 @@ import { supabase } from './supabase';
 import { logger } from './logger';
 import type { Session, Supplier, Item, Week, Quote, QuoteWithDetails, SKUStatus, SupplierStats, SupplierRanking, AnalyticsBySKU, AnalyticsBySupplier, WeekItemVolume } from '../types';
 
-// FIXED LOADING HELL: Add timeout to prevent infinite loading
-// This function wraps promises with a timeout to prevent infinite loading
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => 
-      setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs)
-    )
-  ]);
+// WORLD-DEPENDS-ON-IT FIX: Add timeout to prevent infinite loading - properly handle Supabase queries
+// This function wraps Supabase query promises with a timeout to prevent infinite loading
+async function withTimeout<T>(promise: Promise<{ data: T | null; error: any }>, timeoutMs: number = 5000): Promise<{ data: T | null; error: any }> {
+  let timeoutHandle: NodeJS.Timeout;
+  const timeoutPromise = new Promise<{ data: T | null; error: any }>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      const error = new Error(`Query timed out after ${timeoutMs}ms`);
+      logger.error('WORLD-DEPENDS-ON-IT FIX: Query timeout:', error.message);
+      reject({ data: null, error: { message: error.message, code: 'TIMEOUT' } });
+    }, timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutHandle!);
+    return result as { data: T | null; error: any };
+  } catch (e: any) {
+    clearTimeout(timeoutHandle!);
+    logger.error('WORLD-DEPENDS-ON-IT FIX: Query failed before timeout:', e.message);
+    return { data: null, error: { message: e.message, code: e.code || 'UNKNOWN_ERROR' } };
+  }
 }
 
 export const DEMO_PASSWORD = '123';
@@ -59,14 +71,13 @@ export function loadSession(): Session | null {
 export async function fetchSuppliers(): Promise<Supplier[]> {
   try {
     // FIXED LOADING HELL: Add timeout and limit
-    const { data, error } = await withTimeout(
-      supabase
-        .from('suppliers')
-        .select('*')
-        .order('name', { ascending: true })
-        .limit(100),
-      5000
-    );
+    // WORLD-DEPENDS-ON-IT FIX: Properly wrap Supabase query with timeout
+    const queryPromise = supabase
+      .from('suppliers')
+      .select('*')
+      .order('name', { ascending: true })
+      .limit(100);
+    const { data, error } = await withTimeout(queryPromise, 5000);
     if (error) {
       console.error('❌ FIXED LOADING HELL: Error fetching suppliers:', error);
       return [];
@@ -81,14 +92,13 @@ export async function fetchSuppliers(): Promise<Supplier[]> {
 export async function fetchItems(): Promise<Item[]> {
   try {
     // FIXED LOADING HELL: Add timeout and limit
-    const { data, error } = await withTimeout(
-      supabase
-        .from('items')
-        .select('*')
-        .order('display_order', { ascending: true })
-        .limit(100),
-      5000
-    );
+    // WORLD-DEPENDS-ON-IT FIX: Properly wrap Supabase query with timeout
+    const queryPromise = supabase
+      .from('items')
+      .select('*')
+      .order('display_order', { ascending: true })
+      .limit(100);
+    const { data, error } = await withTimeout(queryPromise, 5000);
     if (error) {
       console.error('❌ FIXED LOADING HELL: Error fetching items:', error);
       return [];
@@ -106,14 +116,12 @@ export async function fetchWeeks(): Promise<Week[]> {
     // KILLED FILTER: Removed ALL WHERE clauses on dates, status, etc.
     // KILLED LIMIT: Removed ALL .limit() and .range()
     // Order by week_number ascending (1, 2, 3, ... 8) - NO date filters, NO limits
-    // FIXED LOADING HELL: Add timeout to prevent infinite loading
-    const { data, error } = await withTimeout(
-      supabase
-        .from('weeks')
-        .select('*')
-        .order('week_number', { ascending: true }),
-      5000
-    );
+    // WORLD-DEPENDS-ON-IT FIX: Properly wrap Supabase query with timeout
+    const queryPromise = supabase
+      .from('weeks')
+      .select('*')
+      .order('week_number', { ascending: true });
+    const { data, error } = await withTimeout(queryPromise, 5000);
     
     if (error) {
       logger.error('FIXED LOADING HELL: Error fetching weeks:', error);
@@ -243,6 +251,7 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
       quotesQuery = quotesQuery.eq('supplier_id', supplierId);
     }
 
+    // WORLD-DEPENDS-ON-IT FIX: Properly wrap Supabase query with timeout
     const { data: quotesData, error: quotesError } = await withTimeout(quotesQuery, 5000);
     
     if (quotesError || !quotesData || quotesData.length === 0) {

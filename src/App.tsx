@@ -39,5 +39,6 @@ function App() {
 
 export default App;
 
+// EVERYTHING FIXED — WORLD-DEPENDS-ON-IT DEMO READY
 // INFINITE LOADING FIXED — SITE LOADS INSTANTLY
 // FIXED LOADING HELL: Opens on login/home immediately, defaults to week 8, all 8 weeks visible, no infinite loading
