@@ -250,7 +250,7 @@ export function RFDashboard() {
     }
   }, [selectedWeek?.status, quotes, selectedSupplier]);
   const loadData = useCallback(async () => {
-    // FINAL WORLD FIX: Prevent multiple simultaneous loads
+    // FINAL WORLD FIX: Prevent multiple simultaneous loads - but allow first load
     if (loading && hasLoadedOnce) {
       console.log('FINAL WORLD FIX: Skipping loadData - already loading');
       return;
@@ -258,6 +258,11 @@ export function RFDashboard() {
     try {
       setLoadingError(null);
       setLoading(true);
+      
+      // FINAL WORLD FIX: Log start of data load
+      if (typeof window !== 'undefined') {
+        console.log('✅ FINAL WORLD FIX: Starting data load...');
+      }
       
       // FIXED LOADING HELL: Add timeout wrapper for all fetches
       const fetchWithTimeout = async <T,>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> => {

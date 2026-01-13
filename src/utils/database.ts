@@ -248,7 +248,7 @@ export async function fetchQuotesWithDetails(weekId: string, supplierId?: string
       .from('quotes')
       .select('id, week_id, item_id, supplier_id, supplier_fob, rf_counter_fob, supplier_response, supplier_revised_fob, rf_final_fob, awarded_volume, offered_volume, supplier_volume_response, supplier_volume_accepted, created_at, updated_at')
       .eq('week_id', weekId)
-      .limit(100); // FIXED LOADING HELL: Add limit to prevent huge fetches
+      .limit(200); // FINAL WORLD FIX: Increased limit to ensure all quotes load (8 weeks × 5 suppliers × 8 items = 320 max)
 
     if (supplierId) {
       quotesQuery = quotesQuery.eq('supplier_id', supplierId);
