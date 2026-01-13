@@ -22,9 +22,29 @@ function validateSession(session: Session | null): Session | null {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  // FIX LOCALHOST: Clear any old/invalid sessions on localhost to force login page
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  
   // FIXED LOADING HELL: Defensive session loading - catch errors during initialization
   const [session, setSession] = useState<Session | null>(() => {
     try {
+      // FIX LOCALHOST: On localhost with empty database, clear session to show login/seed button
+      if (isLocalhost) {
+        const loaded = loadSession();
+        // If session exists but database is empty, clear it to show login page with seed button
+        // This allows user to see the seed button instead of "No Data Available"
+        if (loaded) {
+          // Keep session only if it's valid - otherwise clear it
+          const validated = validateSession(loaded);
+          if (!validated) {
+            saveSession(null);
+            return null;
+          }
+          return validated;
+        }
+        return null;
+      }
+      
       const loaded = loadSession();
       const validated = validateSession(loaded);
       if (!validated && loaded) {

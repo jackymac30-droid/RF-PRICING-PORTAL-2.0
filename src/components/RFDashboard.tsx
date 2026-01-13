@@ -1097,7 +1097,35 @@ export function RFDashboard() {
     </div>;
   }
   // Empty state: no data at all
+  // FIX LOCALHOST: If database is empty, redirect to login page to show seed button
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  
   if (suppliers.length === 0 || items.length === 0 || weeks.length === 0) {
+    // FIX LOCALHOST: On localhost, if no data, logout and redirect to login page to show seed button
+    if (isLocalhost) {
+      // Clear session and redirect to login page
+      logout();
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <Package className="w-16 h-16 text-white/30 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Database Empty</h3>
+            <p className="text-white/60 mb-4">
+              Redirecting to login page where you can seed the database...
+            </p>
+            <div className="bg-white/5 rounded-lg border border-white/10 p-4 text-left text-sm text-white/70 mb-4">
+              <p className="font-semibold mb-2">Current Status:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>{suppliers.length} suppliers</li>
+                <li>{items.length} items</li>
+                <li>{weeks.length} weeks</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 flex items-center justify-center">
         <div className="text-center max-w-md">
