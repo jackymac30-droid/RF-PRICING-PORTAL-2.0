@@ -333,8 +333,9 @@ function AIInsightsPanel({ sku, selectedWeek }: { sku: SKUAllocation; selectedWe
       const dev = Math.abs(current - hist.sharePercent);
       if (dev > maxDev) {
         maxDev = dev;
-        devSupplier = sku.entries.find(e => e.supplier_id === hist.supplierId)?.supplier_name || '';
-        const direction = current < hist.sharePercent ? 'below' : 'above';
+        // devSupplier unused but kept for future use
+        // const devSupplier = sku.entries.find(e => e.supplier_id === hist.supplierId)?.supplier_name || '';
+        // const direction = current < hist.sharePercent ? 'below' : 'above';
         // fairnessNote unused but kept for future use
         // fairnessNote = {
         //   supplier: devSupplier,
