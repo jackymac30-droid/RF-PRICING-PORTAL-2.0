@@ -1,0 +1,51 @@
+================================================================================
+                    ⚠️  READ THIS FIRST! ⚠️
+================================================================================
+
+YOU ARE COPYING THE WRONG FILE!
+
+You keep copying markdown guide files (.md) instead of the SQL file (.sql)
+
+================================================================================
+                    ✅ USE THIS FILE ONLY:
+================================================================================
+
+    COPY_PASTE_SEED.sql
+
+================================================================================
+                    ❌ DO NOT USE THESE FILES:
+================================================================================
+
+    SQL_COPY_PASTE_INSTRUCTIONS.md  ← You copied this (WRONG!)
+    SEED_INSTRUCTIONS.md             ← Don't copy this either
+    Any file ending in .md           ← These are guides, not SQL!
+
+================================================================================
+                    📋 QUICK STEPS:
+================================================================================
+
+1. Close any .md files you have open
+2. Open: COPY_PASTE_SEED.sql
+3. The file should start with: -- ============================================
+4. Copy ALL the code (Ctrl+A, then Ctrl+C)
+5. Paste into Supabase SQL Editor
+6. Click Run
+
+================================================================================
+                    🔍 HOW TO VERIFY YOU HAVE THE RIGHT FILE:
+================================================================================
+
+The correct file (COPY_PASTE_SEED.sql) starts with:
+
+    -- ============================================
+    -- COPY THIS ENTIRE FILE AND PASTE INTO SUPABASE SQL EDITOR
+    -- Then click "Run" button
+    -- ============================================
+    
+    -- Ensure required columns exist in quotes table
+    DO $$
+    BEGIN
+
+If your file starts with "# 📋" or "# 🚀", you have the WRONG file!
+
+================================================================================

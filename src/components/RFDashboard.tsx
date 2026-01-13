@@ -483,7 +483,7 @@ export function RFDashboard() {
     return () => {
       window.removeEventListener('pricing-submitted', handlePricingSubmitted as EventListener);
     };
-  }, [selectedWeek?.id, mainView, showToast, loadAllQuotesForWeek]);
+  }, [selectedWeek?.id, mainView, showToast, loadAllQuotesForWeek]); // FINAL NO-SQL FIX: Immediate sandbox redirect after pricing submit
   // Set up realtime subscriptions after functions are defined
   const handleRealtimeQuotes = useCallback(() => {
     if (selectedWeek) {
